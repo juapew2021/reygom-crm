@@ -16,26 +16,39 @@ function MainLayout({ children }) {
         </h1>
 
         <nav className="space-y-4">
-          <Link to="/dashboard" className="block hover:text-brand-red">
+          <Link
+            to="/dashboard"
+            className="block hover:text-brand-red transition"
+          >
             Dashboard
           </Link>
 
-          <Link to="/properties" className="block hover:text-brand-red">
+          <Link
+            to="/properties"
+            className="block hover:text-brand-red transition"
+          >
             Inmuebles
           </Link>
 
-          <span className="block text-gray-500">
+          <Link
+            to="/leads"
+            className="block hover:text-brand-red transition"
+          >
             Leads
-          </span>
+          </Link>
 
           <span className="block text-gray-500">
             Agenda
+          </span>
+
+          <span className="block text-gray-500">
+            Reportes
           </span>
         </nav>
 
         <button
           onClick={logout}
-          className="mt-10 bg-brand-red text-white px-5 py-2 rounded font-bold"
+          className="mt-10 bg-brand-red hover:bg-red-700 text-white px-5 py-2 rounded font-bold transition"
         >
           Cerrar sesión
         </button>

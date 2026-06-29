@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-
+import LeadsPage from './pages/Leads/LeadsPage';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import PropertiesPage from './pages/Properties/PropertiesPage';
@@ -13,6 +13,14 @@ function App() {
     <Router>
 
       <Routes>
+        <Route
+        path="/leads"
+        element={
+        <ProtectedRoute>
+        <LeadsPage />
+        </ProtectedRoute>
+        }
+        />
 
         <Route path="/" element={<Login />} />
 
