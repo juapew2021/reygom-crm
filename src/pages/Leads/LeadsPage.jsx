@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import api from "../../services/api";
 import MainLayout from "../../layouts/MainLayout";
+import Button from "../../components/common/Button";
+import Input from "../../components/forms/Input";
+import Select from "../../components/forms/Select";
 
 function LeadsPage() {
   const emptyForm = {
@@ -66,29 +69,28 @@ function LeadsPage() {
 
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input
-              className="border border-gray-400 p-2 rounded"
+            <Input
               placeholder="Nombre completo"
               value={form.full_name}
               required
               onChange={(e) => setForm({ ...form, full_name: e.target.value })}
             />
 
-            <input
+            <Input
               className="border border-gray-400 p-2 rounded"
               placeholder="Teléfono"
               value={form.phone}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
             />
 
-            <input
+            <Input
               className="border border-gray-400 p-2 rounded"
               placeholder="Email"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
             />
 
-            <select
+            <Select
               className="border border-gray-400 p-2 rounded"
               value={form.pipeline_stage}
               onChange={(e) => setForm({ ...form, pipeline_stage: e.target.value })}
@@ -100,9 +102,9 @@ function LeadsPage() {
               <option>Negociación</option>
               <option>Venta Cerrada</option>
               <option>Perdido</option>
-            </select>
+            </Select>
 
-            <select
+            <Select
               className="border border-gray-400 p-2 rounded md:col-span-2"
               value={form.property_interest_id}
               onChange={(e) => setForm({ ...form, property_interest_id: e.target.value })}
@@ -113,12 +115,12 @@ function LeadsPage() {
                   {property.reference_id} - {property.title}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
 
-          <button className="mt-4 bg-red-600 text-white px-6 py-2 rounded font-bold">
+          <Button className="mt-4" onClick={handleSubmit}>
             Crear lead
-          </button>
+          </Button>
         </form>
       </div>
 
