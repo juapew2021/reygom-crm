@@ -4,6 +4,9 @@ import MainLayout from "../../layouts/MainLayout";
 import Button from "../../components/common/Button";
 import Input from "../../components/forms/Input";
 import Select from "../../components/forms/Select";
+import PageHeader from "../../components/common/PageHeader";
+import EmptyState from "../../components/common/EmptyState";
+import LeadCard from "../../components/leads/LeadCard";
 
 function LeadsPage() {
   const emptyForm = {
@@ -62,7 +65,10 @@ function LeadsPage() {
 
   return (
     <MainLayout>
-      <h1 className="text-3xl font-bold mb-6">Gestión de Leads</h1>
+      <PageHeader
+  title="Gestión de Leads"
+  subtitle="Administra clientes potenciales y oportunidades comerciales."
+/>
 
       <div className="bg-white p-6 rounded shadow mb-8 text-black">
         <h2 className="text-xl font-bold mb-4">Nuevo lead</h2>
@@ -125,37 +131,29 @@ function LeadsPage() {
       </div>
 
       <div className="bg-white rounded shadow p-6 text-black overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-200">
-            <tr>
-              <th>Nombre</th>
-              <th>Teléfono</th>
-              <th>Email</th>
-              <th>Inmueble</th>
-              <th>Estado</th>
-            </tr>
-          </thead>
+        {leads.length === 0 ? (
+  <EmptyState
+    icon="👥"
+    title="Todavía no tienes leads"
+    description="Crea tu primer lead para empezar a gestionar oportunidades comerciales."
+  />
+) : (
+  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+    {leads.map((lead) => {
+      const contact = getContact(lead);
 
-          <tbody>
-            {leads.map((lead) => {
-              const contact = getContact(lead);
-
-              return (
-                <tr key={lead.id} className="border-b">
-                  <td>{lead.full_name}</td>
-                  <td>{contact.phone || "-"}</td>
-                  <td>{contact.email || "-"}</td>
-                  <td>
-                    {lead.property_reference
-                      ? `${lead.property_reference} - ${lead.property_title}`
-                      : "-"}
-                  </td>
-                  <td>{lead.pipeline_stage}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+      return (
+        <LeadCard
+          key={lead.id}
+          lead={lead}
+          contact={contact}
+          onEdit={(lead) => console.log("Editar", lead)}
+          onDelete={(id) => console.log("Eliminar", id)}
+        />
+      );
+    })}
+  </div>
+)}
       </div>
     </MainLayout>
   );
