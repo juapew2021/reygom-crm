@@ -25,3 +25,29 @@
     @apply bg-gray-50;
   }
 }
+/* Property Publisher: campos legibles sobre fondo blanco */
+.property-publisher-form input,
+.property-publisher-form select,
+.property-publisher-form textarea {
+  color: #111827 !important;
+  background-color: #ffffff !important;
+  caret-color: #111827;
+}
+
+.property-publisher-form input::placeholder,
+.property-publisher-form textarea::placeholder {
+  color: #9ca3af !important;
+  opacity: 1;
+}
+
+.property-publisher-form select option {
+  color: #111827;
+  background-color: #ffffff;
+}
+
+.property-publisher-form input:disabled,
+.property-publisher-form select:disabled,
+.property-publisher-form textarea:disabled {
+  color: #6b7280 !important;
+  background-color: #f3f4f6 !important;
+}

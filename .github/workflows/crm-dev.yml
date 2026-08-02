@@ -1,0 +1,85 @@
+name: Deploy CRM DEV
+
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+
+concurrency:
+  group: reygom-crm-dev
+  cancel-in-progress: true
+
+jobs:
+  validate-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+
+      - name: Preparar pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
+
+      - name: Construir CRM para DEV
+        env:
+          VITE_API_URL: https://api-dev.reygom.com
+        run: pnpm run build
+
+      - name: Configurar acceso SSH
+        shell: bash
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/reygom_actions
+          chmod 600 ~/.ssh/reygom_actions
+
+          ssh-keyscan \
+            -p "${{ secrets.SSH_PORT }}" \
+            -H "${{ secrets.SSH_HOST }}" \
+            >> ~/.ssh/known_hosts
+
+      - name: Desplegar CRM en DEV
+        shell: bash
+        run: |
+          ssh \
+            -i ~/.ssh/reygom_actions \
+            -p "${{ secrets.SSH_PORT }}" \
+            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
+            "/opt/reygom/scripts/deploy-crm-dev.sh"
+
+      - name: Comprobar CRM DEV
+        shell: bash
+        run: |
+          for attempt in {1..12}; do
+            code="$(
+              curl \
+                --silent \
+                --show-error \
+                --output /dev/null \
+                --write-out '%{http_code}' \
+                https://crm-dev.reygom.com/
+            )"
+
+            if [[ "$code" == "200" ]]; then
+              echo "CRM DEV responde HTTP 200."
+              exit 0
+            fi
+
+            echo "Intento $attempt: HTTP $code"
+            sleep 10
+          done
+
+          echo "El CRM DEV no respondió correctamente."
+          exit 1

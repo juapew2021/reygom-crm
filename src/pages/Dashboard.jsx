@@ -1,20 +1,43 @@
-import MainLayout from '../layouts/MainLayout';
+import { useEffect, useState } from "react";
+
+import MainLayout from "../layouts/MainLayout";
+import PageHeader from "../components/common/PageHeader";
+import StatsGrid from "../components/dashboard/StatsGrid";
+import PipelineSummary from "../components/dashboard/PipelineSummary";
+import RecentLeads from "../components/dashboard/RecentLeads";
+import RecentProperties from "../components/dashboard/RecentProperties";
+import api from "../services/api";
 
 function Dashboard() {
+  const [dashboard, setDashboard] = useState(null);
+
+  useEffect(() => {
+    api.get("/dashboard").then((response) => {
+      setDashboard(response.data);
+    });
+  }, []);
+
   return (
     <MainLayout>
-      <h1 className="text-3xl font-bold mb-6">
-        Dashboard
-      </h1>
+      <PageHeader
+        title="Dashboard"
+        subtitle="Resumen general de actividad comercial e inmobiliaria."
+      />
 
-      <div className="bg-white rounded-lg p-6 text-black">
-        <h2 className="text-xl font-bold mb-4">
-          Bienvenido a ReyGom CRM
-        </h2>
+      <div className="mb-8">
+        <StatsGrid dashboard={dashboard} />
+      </div>
 
-        <p>
-          Sistema de gestión inmobiliaria.
-        </p>
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <PipelineSummary pipeline={dashboard?.pipeline} />
+
+        <RecentLeads
+          leads={dashboard?.latest_leads || []}
+        />
+
+        <RecentProperties
+          properties={dashboard?.latest_properties || []}
+        />
       </div>
     </MainLayout>
   );
