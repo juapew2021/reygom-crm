@@ -3,7 +3,7 @@ name: Deploy CRM DEV
 on:
   push:
     branches:
-      - feature/leads-crm
+      - develop
   workflow_dispatch:
 
 concurrency:
