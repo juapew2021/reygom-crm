@@ -4,6 +4,12 @@ function MainLayout({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const appVersion =
+    import.meta.env.VITE_APP_VERSION || "0.5.0-dev";
+
+  const appEnvironment =
+    import.meta.env.VITE_APP_ENV || "DEV";
+
   const logout = () => {
     localStorage.clear();
     navigate("/");
@@ -66,6 +72,11 @@ function MainLayout({ children }) {
           >
             Cerrar sesión
           </button>
+
+          <div className="mt-2 text-center text-xs text-slate-400">
+            <div>CRM {appEnvironment}</div>
+            <div>v{appVersion}</div>
+          </div>
         </div>
       </aside>
 
