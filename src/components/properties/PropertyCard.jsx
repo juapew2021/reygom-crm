@@ -74,7 +74,7 @@ function PropertyCard({ property, onEdit, onDelete }) {
           </button>
 
           <a
-            href={`https://api.reygom.com/public/properties/${property.id}`}
+            href={`${import.meta.env.VITE_API_URL}/public/properties/${property.id}`}
             target="_blank"
             rel="noreferrer"
             className="rounded-xl bg-gray-700 px-4 py-2 font-bold text-white hover:bg-gray-800"

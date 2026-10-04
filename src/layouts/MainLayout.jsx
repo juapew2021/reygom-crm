@@ -55,6 +55,13 @@ function MainLayout({ children }) {
             Leads
           </Link>
 
+          <Link
+            to="/alquileres"
+            className={linkClass("/alquileres")}
+          >
+            Alquileres
+          </Link>
+
           <span className="block rounded-xl px-3 py-2 text-gray-500">
             Agenda
           </span>

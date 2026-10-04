@@ -10,6 +10,7 @@ import LeadsPage from "./pages/Leads/LeadsPage";
 import Login from "./pages/Login";
 import PropertiesListPage from "./pages/Properties/PropertiesListPage";
 import PropertyEditorPage from "./pages/Properties/PropertyEditorPage";
+import AlquileresPage from "./pages/Alquileres/AlquileresPage";
 
 function App() {
   return (
@@ -61,6 +62,15 @@ function App() {
           element={
             <ProtectedRoute>
               <LeadsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/alquileres"
+          element={
+            <ProtectedRoute>
+              <AlquileresPage />
             </ProtectedRoute>
           }
         />
