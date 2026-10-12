@@ -1,6 +1,6 @@
 FROM node:22-bookworm-slim AS build
 
-RUN npm install -g pnpm
+RUN npm install -g pnpm@11.18.0
 
 WORKDIR /app
 

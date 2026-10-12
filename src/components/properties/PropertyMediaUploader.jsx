@@ -21,12 +21,16 @@ function PropertyMediaUploader({
   onGalleryChange,
 }) {
   const inputRef = useRef(null);
+  const galleryChangeRef = useRef(onGalleryChange);
+  useEffect(() => {
+    galleryChangeRef.current = onGalleryChange;
+  }, [onGalleryChange]);
 
   const [gallery, setGallery] = useState([]);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [draggingFiles, setDraggingFiles] = useState(false);
   const [draggingIndex, setDraggingIndex] = useState(null);
-  const [loadingGallery, setLoadingGallery] = useState(false);
+  const [loadingGallery, setLoadingGallery] = useState(Boolean(propertyId));
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [actionId, setActionId] = useState(null);
@@ -93,7 +97,23 @@ function PropertyMediaUploader({
   };
 
   useEffect(() => {
-    loadGallery();
+    if (!propertyId) return;
+    const controller = new AbortController();
+    api.get(`/properties/${propertyId}/images`, { signal: controller.signal }).then((response) => {
+      if (controller.signal.aborted) return;
+      const images = Array.isArray(response.data) ? response.data : [];
+      setGallery(images);
+      if (typeof galleryChangeRef.current === "function") {
+        galleryChangeRef.current(images);
+      }
+    }).catch((requestError) => {
+      if (!controller.signal.aborted) {
+        setError(requestError.response?.data?.message || "No se pudo cargar la galería del inmueble.");
+      }
+    }).finally(() => {
+      if (!controller.signal.aborted) setLoadingGallery(false);
+    });
+    return () => controller.abort();
   }, [propertyId]);
 
   const validateFiles = (files) => {
