@@ -9,3 +9,20 @@ export function mergeVisibleProperties(summary, properties) {
     latest_properties: properties.slice(0, 5),
   };
 }
+
+export function mergeVisibleLeads(summary, leads) {
+  if (!Array.isArray(leads)) {
+    throw new TypeError("La respuesta de leads no es válida.");
+  }
+  const stages = new Map();
+  for (const lead of leads) {
+    const stage = lead.pipeline_stage || "Nuevo";
+    stages.set(stage, (stages.get(stage) || 0) + 1);
+  }
+  return {
+    ...summary,
+    leads_count: leads.length,
+    latest_leads: leads.slice(0, 5),
+    pipeline: Object.fromEntries(stages),
+  };
+}

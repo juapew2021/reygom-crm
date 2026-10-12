@@ -7,7 +7,7 @@ import PipelineSummary from "../components/dashboard/PipelineSummary";
 import RecentLeads from "../components/dashboard/RecentLeads";
 import RecentProperties from "../components/dashboard/RecentProperties";
 import api from "../services/api";
-import { mergeVisibleProperties } from "../services/dashboardSummary";
+import { mergeVisibleProperties, mergeVisibleLeads } from "../services/dashboardSummary";
 
 function Dashboard() {
   const [dashboard, setDashboard] = useState(null);
@@ -18,9 +18,10 @@ function Dashboard() {
     Promise.all([
       api.get("/dashboard", { signal: controller.signal }),
       api.get("/properties", { signal: controller.signal }),
-    ]).then(([summary, properties]) => {
+      api.get("/leads", { signal: controller.signal }),
+    ]).then(([summary, properties, leads]) => {
       if (!controller.signal.aborted) {
-        setDashboard(mergeVisibleProperties(summary.data, properties.data));
+        setDashboard(mergeVisibleLeads(mergeVisibleProperties(summary.data, properties.data), leads.data));
       }
     }).catch(() => {
       if (!controller.signal.aborted) {

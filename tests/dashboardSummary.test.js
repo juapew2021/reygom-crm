@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mergeVisibleProperties } from "../src/services/dashboardSummary.js";
+import { mergeVisibleProperties, mergeVisibleLeads } from "../src/services/dashboardSummary.js";
 
 test("admin dashboard follows the visible list rather than a stale organization count", () => {
   const properties = Array.from({ length: 176 }, (_, index) => ({ id: String(index) }));
@@ -27,4 +27,20 @@ test("an empty authorized list gives an empty summary", () => {
 
 test("an invalid response fails instead of displaying misleading zero totals", () => {
   assert.throws(() => mergeVisibleProperties({}, { message: "error" }), TypeError);
+});
+
+test("lead total, pipeline and recent leads follow the visible lead list", () => {
+  const leads = [{ id: "new", pipeline_stage: "Contactado" }, { id: "old", pipeline_stage: "Nuevo" }, { id: "other", pipeline_stage: "Contactado" }];
+  const summary = { properties_count: 176, leads_count: 0, pipeline: {} };
+  const result = mergeVisibleLeads(summary, leads);
+  assert.equal(result.leads_count, 3);
+  assert.deepEqual(result.pipeline, { Contactado: 2, Nuevo: 1 });
+  assert.deepEqual(result.latest_leads, leads);
+  assert.equal(result.properties_count, 176);
+  assert.equal(summary.leads_count, 0);
+});
+
+test("empty and malformed lead responses are handled explicitly", () => {
+  assert.deepEqual(mergeVisibleLeads({}, []), { leads_count: 0, latest_leads: [], pipeline: {} });
+  assert.throws(() => mergeVisibleLeads({}, null), TypeError);
 });
