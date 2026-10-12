@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 
 import api from "../../services/api";
-import { searchCrawlerInBatches } from "../../services/crawlerSearch";
+import { groupCrawlerMessages, searchCrawlerInBatches } from "../../services/crawlerSearch";
 import MainLayout from "../../layouts/MainLayout";
 
 const QUERY_OPTIONS = [
@@ -86,6 +86,28 @@ const DEFAULT_EXTERNAL_FILTERS = {
   metroCities: [],
 };
 
+function CrawlerMessages({ title, messages, neutral = false }) {
+  const groups = groupCrawlerMessages(messages);
+  if (!groups.length) return null;
+  return (
+    <section className={"mt-6 rounded-2xl border p-4 text-sm " + (neutral ? "border-slate-200 bg-slate-50 text-slate-700" : "border-amber-200 bg-amber-50 text-amber-800")}>
+      <h3 className="font-bold">{title}</h3>
+      <ul className="mt-2 space-y-2">
+        {groups.map((group) => (
+          <li key={group.key}>
+            <details>
+              <summary className="cursor-pointer">
+                <span className="font-semibold">{group.sourceLabel}{group.cities.length === 1 ? " (" + group.cities[0] + ")" : " (" + group.cities.length + " municipios)"}:</span>{" "}{group.message}
+              </summary>
+              {group.cities.length > 1 && <p className="mt-1 pl-4">Municipios: {group.cities.join(", ")}</p>}
+            </details>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 function AlquileresPage() {
   const navigate = useNavigate();
 
@@ -98,6 +120,7 @@ function AlquileresPage() {
   const [externalFilters, setExternalFilters] = useState(DEFAULT_EXTERNAL_FILTERS);
   const [externalResults, setExternalResults] = useState([]);
   const [externalSourceErrors, setExternalSourceErrors] = useState({});
+  const [externalSourceNotices, setExternalSourceNotices] = useState({});
   const [externalLoading, setExternalLoading] = useState(false);
   const [externalError, setExternalError] = useState("");
   const [externalQueried, setExternalQueried] = useState(false);
@@ -191,6 +214,7 @@ function AlquileresPage() {
       setExternalLoading(true);
       setExternalError("");
       setExternalSourceErrors({});
+      setExternalSourceNotices({});
       setExternalResults([]);
       setExternalQueried(true);
 
@@ -232,6 +256,7 @@ function AlquileresPage() {
           if (externalAbort.current !== controller) return;
           setExternalResults(progress.listings);
           setExternalSourceErrors(progress.errors);
+          setExternalSourceNotices(progress.notices);
           setExternalProgress({ completed: progress.completed, total: progress.total });
         },
       });
@@ -584,7 +609,7 @@ function AlquileresPage() {
             </div>
           ) : externalError && externalResults.length === 0 ? null : externalResults.length === 0 ? (
             <div className="rounded-3xl bg-white p-8 text-center text-gray-600">
-              {Object.keys(externalSourceErrors).length > 0
+              {Object.keys(externalSourceErrors).length > 0 || Object.values(externalSourceNotices).some(notice => notice.kind !== "no_matches")
                 ? "No se han obtenido anuncios de los portales que respondieron. Revisa los avisos de la consulta."
                 : "No se han encontrado anuncios con estos criterios."}
             </div>
@@ -599,23 +624,9 @@ function AlquileresPage() {
             </div>
           )}
 
-          {Object.keys(externalSourceErrors).length > 0 && (
-            <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-              <p className="font-bold">
-                Algunos portales no han podido consultarse:
-              </p>
-              <ul className="mt-2 list-inside list-disc">
-                {Object.entries(externalSourceErrors).map(
-                  ([source, message]) => (
-                    <li key={source}>
-                      <span className="font-semibold">{source}:</span>{" "}
-                      {String(message).slice(0, 160)}
-                    </li>
-                  )
-                )}
-              </ul>
-            </div>
-          )}
+          <CrawlerMessages title="Portales que no se pudieron consultar" messages={externalSourceErrors} />
+          <CrawlerMessages title="Cobertura no configurada" messages={Object.fromEntries(Object.entries(externalSourceNotices).filter(entry => entry[1].kind === "unsupported_city"))} neutral />
+          <CrawlerMessages title="Consultas sin resultados" messages={Object.fromEntries(Object.entries(externalSourceNotices).filter(entry => entry[1].kind !== "unsupported_city"))} neutral />
         </section>
       )}
     </MainLayout>

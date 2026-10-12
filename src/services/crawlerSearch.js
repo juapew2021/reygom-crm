@@ -29,8 +29,9 @@ export async function searchCrawlerInBatches(payload, { endpoint, signal, onProg
   const total = batches.reduce((sum, batch) => sum + batch.sources.length, 0);
   const listings = new Map();
   const errors = {};
+  const notices = {};
   let completed = 0;
-  const snapshot = () => ({ completed, total, listings: [...listings.values()], errors: { ...errors } });
+  const snapshot = () => ({ completed, total, listings: [...listings.values()], errors: { ...errors }, notices: { ...notices } });
   onProgress(snapshot());
   for (const batch of batches) {
     signal?.throwIfAborted();
@@ -45,10 +46,32 @@ export async function searchCrawlerInBatches(payload, { endpoint, signal, onProg
     if (!response.ok) throw new Error("HTTP " + response.status);
     const data = await response.json();
     for (const listing of Array.isArray(data.listings) ? data.listings : []) if (typeof listing.url === "string" && /^https?:\/\//.test(listing.url)) listings.set(listing.url, listing);
-    for (const [source, message] of Object.entries(data.errors || {})) errors[source + " (" + batch.city + ")"] = describeCrawlerError(message);
+    for (const [source, message] of Object.entries(data.errors || {})) {
+      const key = source + " (" + batch.city + ")";
+      if (String(message).includes("todavía no está configurada")) notices[key] = { kind: "unsupported_city", message: String(message) };
+      else if (String(message).includes("No se encontraron anuncios")) notices[key] = { kind: "empty_unverified", message: "No se han obtenido anuncios; no se ha podido confirmar si existen coincidencias." };
+      else errors[key] = describeCrawlerError(message);
+    }
+    for (const [source, notice] of Object.entries(data.notices || {})) notices[source + " (" + batch.city + ")"] = notice;
     if (data.partial) { onProgress(snapshot()); throw new Error("Un lote no se ha podido completar. Se conservan los resultados obtenidos."); }
     completed += batch.sources.length;
     onProgress(snapshot());
   }
   return snapshot();
+}
+
+export function groupCrawlerMessages(messages) {
+  const labels = { idealista: "Idealista", milanuncios: "Milanuncios", wallapop: "Wallapop", fotocasa: "Fotocasa", pisoscom: "Pisos.com", apicat: "API.cat", flatio: "Flatio", pallars: "Pallars" };
+  const groups = new Map();
+  for (const [name, value] of Object.entries(messages)) {
+    const split = name.lastIndexOf(" (");
+    const source = split < 0 ? name : name.slice(0, split);
+    const city = split < 0 ? "" : name.slice(split + 2, -1);
+    const message = typeof value === "string" ? value : value.message;
+    const kind = typeof value === "string" ? "error" : value.kind;
+    const key = JSON.stringify([source, kind, message]);
+    if (!groups.has(key)) groups.set(key, { key, sourceLabel: labels[source] || source, message, cities: [] });
+    if (city && !groups.get(key).cities.includes(city)) groups.get(key).cities.push(city);
+  }
+  return [...groups.values()];
 }

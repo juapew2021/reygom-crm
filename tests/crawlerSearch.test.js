@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {planCrawlerBatches,searchCrawlerInBatches} from "../src/services/crawlerSearch.js";
+import {planCrawlerBatches,searchCrawlerInBatches,groupCrawlerMessages} from "../src/services/crawlerSearch.js";
 const response = (data,status=200) => ({ok:status===200,status,json:async()=>data,headers:{get:()=>"1"}});
 test("plans every portal-city pair once in batches of at most two",()=>{
  const batches=planCrawlerBatches({city:"A",cities:["A","B","A"],sources:["x","y","z","x"],price_max:1100});
@@ -20,4 +20,13 @@ test("stopping after first batch sends no further query",async()=>{
 test("busy response is retried without duplicating progress",async()=>{
  let calls=0,waits=0;const r=await searchCrawlerInBatches({sources:["x"]},{endpoint:"/crawler/search",wait:async()=>waits++,fetchImpl:async()=>response({listings:[]},++calls===1?429:200)});
  assert.equal(calls,2);assert.equal(waits,1);assert.equal(r.completed,1);
+});
+
+test("informational notices stay separate from access errors",async()=>{
+ const r=await searchCrawlerInBatches({city:"A",sources:["fotocasa","idealista"]},{endpoint:"/crawler/search",fetchImpl:async()=>response({listings:[],errors:{idealista:"403 Forbidden"},notices:{fotocasa:{kind:"no_matches",message:"No hay coincidencias"}}})});
+ assert.equal(Object.keys(r.errors).length,1);assert.equal(Object.keys(r.notices).length,1);assert.equal(r.notices["fotocasa (A)"].kind,"no_matches");
+});
+test("repeated messages are grouped by portal with all cities retained",()=>{
+ const groups=groupCrawlerMessages({"idealista (A)":"Acceso rechazado","idealista (B)":"Acceso rechazado","pisoscom (A)":"Ruta no encontrada"});
+ assert.equal(groups.length,2);assert.deepEqual(groups[0].cities,["A","B"]);assert.equal(groups[0].sourceLabel,"Idealista");
 });
