@@ -60,7 +60,11 @@ const METRO_CITIES = [
   { id: "Santa Coloma de Gramenet", label: "Santa Coloma de Gramenet" },
 ];
 
-const SCRAPER_URL = "https://scraper.reygom.com/search";
+const SCRAPER_URL =
+  import.meta.env.VITE_SCRAPER_URL ||
+  (import.meta.env.VITE_APP_ENV === "DEV"
+    ? "/crawler/search"
+    : "https://scraper.reygom.com/search");
 
 const OWNER_TYPE_LABELS = {
   particular: "Particular",

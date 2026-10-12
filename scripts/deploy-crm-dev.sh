@@ -27,7 +27,7 @@ test -n "$OLD"
 printf '%s\n' "$OLD" > "$RUN/rollback/image.txt"
 microk8s ctr images export "$RUN/rollback/image.tar" "docker.io/library/$OLD"
 
-docker build --build-arg VITE_API_URL=https://api-dev.reygom.com \
+docker build --build-arg VITE_SCRAPER_URL=/crawler/search --build-arg VITE_API_URL=https://api-dev.reygom.com \
   --build-arg VITE_APP_VERSION="$VERSION" --build-arg VITE_APP_ENV=DEV \
   -t "$IMAGE" "$RUN/source"
 docker run --rm --entrypoint sh "$IMAGE" -c \
