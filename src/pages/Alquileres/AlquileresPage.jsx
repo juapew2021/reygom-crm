@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 
 import api from "../../services/api";
+import { searchCrawlerInBatches } from "../../services/crawlerSearch";
 import MainLayout from "../../layouts/MainLayout";
 
 const QUERY_OPTIONS = [
@@ -100,6 +101,13 @@ function AlquileresPage() {
   const [externalLoading, setExternalLoading] = useState(false);
   const [externalError, setExternalError] = useState("");
   const [externalQueried, setExternalQueried] = useState(false);
+  const [externalProgress, setExternalProgress] = useState({ completed: 0, total: 0 });
+  const externalAbort = useRef(null);
+
+  useEffect(() => () => {
+    externalAbort.current?.abort();
+    externalAbort.current = null;
+  }, []);
 
 
   useEffect(() => {
@@ -176,6 +184,9 @@ function AlquileresPage() {
   };
 
   const handleExternalSearch = async () => {
+    if (externalAbort.current) return;
+    const controller = new AbortController();
+    externalAbort.current = controller;
     try {
       setExternalLoading(true);
       setExternalError("");
@@ -214,32 +225,33 @@ function AlquileresPage() {
         sources: externalFilters.sources,
       };
 
-      const response = await fetch(SCRAPER_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+      await searchCrawlerInBatches(payload, {
+        endpoint: SCRAPER_URL,
+        signal: controller.signal,
+        onProgress: (progress) => {
+          if (externalAbort.current !== controller) return;
+          setExternalResults(progress.listings);
+          setExternalSourceErrors(progress.errors);
+          setExternalProgress({ completed: progress.completed, total: progress.total });
+        },
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      setExternalResults(Array.isArray(data.listings) ? data.listings : []);
-      setExternalSourceErrors(data.errors || {});
     } catch (requestError) {
-      console.error("Error en la búsqueda externa:", requestError);
-
+      if (externalAbort.current !== controller) return;
+      if (!controller.signal.aborted) console.error("Error en la búsqueda externa:", requestError);
       setExternalError(
-        requestError.message === "HTTP 429"
-          ? "Otra búsqueda está en curso. Espera a que termine antes de consultar de nuevo."
-          : "No se ha podido completar la búsqueda externa. Inténtalo de nuevo en unos segundos."
+        controller.signal.aborted
+          ? "Búsqueda detenida. Se conservan los resultados obtenidos."
+          : requestError.message.startsWith("Selecciona")
+            ? requestError.message
+            : requestError.message === "HTTP 429"
+              ? "Otra búsqueda está en curso. Espera a que termine antes de consultar de nuevo."
+              : "No se ha podido completar la búsqueda. Se conservan los resultados obtenidos; puedes volver a intentarlo."
       );
-      setExternalResults([]);
-      setExternalSourceErrors({});
     } finally {
-      setExternalLoading(false);
+      if (externalAbort.current === controller) {
+        externalAbort.current = null;
+        setExternalLoading(false);
+      }
     }
   };
 
@@ -505,6 +517,16 @@ function AlquileresPage() {
             >
               {externalLoading ? "Consultando portales..." : "Consultar"}
             </button>
+                {externalLoading && (
+                  <button type="button" onClick={() => externalAbort.current?.abort()} className="ml-3 rounded-xl border border-red-600 px-5 py-3 font-bold text-red-600">
+                    Detener búsqueda
+                  </button>
+                )}
+                {externalProgress.total > 0 && (
+                  <p role="status" className="mt-3 text-sm text-gray-600">
+                    Consultas finalizadas: {externalProgress.completed} de {externalProgress.total} · {externalResults.length} resultados
+                  </p>
+                )}
 
             {externalError && (
               <div className="rounded-2xl border border-red-200 bg-red-50 p-4 font-medium text-red-700">
@@ -551,7 +573,7 @@ function AlquileresPage() {
             </h2>
           </div>
 
-          {externalLoading ? (
+          {externalLoading && externalResults.length === 0 ? (
             <div className="rounded-3xl bg-white p-8 text-center text-gray-600">
               Consultando portales externos...
             </div>
@@ -560,7 +582,7 @@ function AlquileresPage() {
               Ajusta los filtros y pulsa «Consultar» para buscar en los
               portales seleccionados.
             </div>
-          ) : externalError ? null : externalResults.length === 0 ? (
+          ) : externalError && externalResults.length === 0 ? null : externalResults.length === 0 ? (
             <div className="rounded-3xl bg-white p-8 text-center text-gray-600">
               {Object.keys(externalSourceErrors).length > 0
                 ? "No se han obtenido anuncios de los portales que respondieron. Revisa los avisos de la consulta."
