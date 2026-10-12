@@ -179,6 +179,8 @@ function AlquileresPage() {
     try {
       setExternalLoading(true);
       setExternalError("");
+      setExternalSourceErrors({});
+      setExternalResults([]);
       setExternalQueried(true);
 
       const primaryCity = externalFilters.city.trim() || "Barcelona";
@@ -230,7 +232,9 @@ function AlquileresPage() {
       console.error("Error en la búsqueda externa:", requestError);
 
       setExternalError(
-        "No se ha podido completar la búsqueda externa. Inténtalo de nuevo en unos segundos."
+        requestError.message === "HTTP 429"
+          ? "Otra búsqueda está en curso. Espera a que termine antes de consultar de nuevo."
+          : "No se ha podido completar la búsqueda externa. Inténtalo de nuevo en unos segundos."
       );
       setExternalResults([]);
       setExternalSourceErrors({});
@@ -556,9 +560,11 @@ function AlquileresPage() {
               Ajusta los filtros y pulsa «Consultar» para buscar en los
               portales seleccionados.
             </div>
-          ) : externalResults.length === 0 ? (
+          ) : externalError ? null : externalResults.length === 0 ? (
             <div className="rounded-3xl bg-white p-8 text-center text-gray-600">
-              No se han encontrado anuncios con estos criterios.
+              {Object.keys(externalSourceErrors).length > 0
+                ? "No se han obtenido anuncios de los portales que respondieron. Revisa los avisos de la consulta."
+                : "No se han encontrado anuncios con estos criterios."}
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
