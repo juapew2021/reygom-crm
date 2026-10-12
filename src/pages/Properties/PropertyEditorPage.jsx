@@ -31,7 +31,7 @@ const emptyForm = {
   built_area: "",
 };
 
-function PropertyEditorPage() {
+function PropertyEditor() {
   const navigate = useNavigate();
   const { id } = useParams();
 
@@ -105,9 +105,47 @@ function PropertyEditorPage() {
   };
 
   useEffect(() => {
-    if (id) {
-      loadProperty(id);
-    }
+    if (!id) return;
+    const controller = new AbortController();
+    api.get(`/properties/${id}`, { signal: controller.signal }).then((response) => {
+      if (controller.signal.aborted) return;
+      setError("");
+      const property = response.data;
+
+      setPropertyId(property.id);
+
+      setForm({
+        reference_id:
+          property.reference_id || "",
+        title: property.title || "",
+        description:
+          property.description || "",
+        price: property.price || "",
+        operation_type:
+          property.operation_type || "Venta",
+        property_type:
+          property.property_type || "Piso",
+        status:
+          property.status || "Disponible",
+        cover_image:
+          property.cover_image || "",
+        city: property.city || "",
+        province: property.province || "",
+        bedrooms:
+          property.bedrooms ?? "",
+        bathrooms:
+          property.bathrooms ?? "",
+        built_area:
+          property.built_area ?? "",
+      });
+    }).catch((requestError) => {
+      if (!controller.signal.aborted) {
+        setError(requestError.response?.data?.message || "No se pudo cargar el inmueble.");
+      }
+    }).finally(() => {
+      if (!controller.signal.aborted) setLoading(false);
+    });
+    return () => controller.abort();
   }, [id]);
 
   const handleChange = ({
@@ -320,6 +358,7 @@ function PropertyEditorPage() {
               />
 
               <PropertyMediaUploader
+                  key={propertyId || "new"}
                 propertyId={propertyId}
                 onGalleryChange={
                   handleGalleryChange
@@ -335,6 +374,11 @@ function PropertyEditorPage() {
       )}
     </MainLayout>
   );
+}
+
+function PropertyEditorPage() {
+  const { id } = useParams();
+  return <PropertyEditor key={id || "new"} />;
 }
 
 export default PropertyEditorPage;

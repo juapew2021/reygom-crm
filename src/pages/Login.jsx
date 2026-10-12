@@ -13,7 +13,7 @@ function Login() {
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('role', response.data.role);
       navigate('/dashboard');
-    } catch (error) {
+    } catch {
       alert('Credenciales incorrectas');
     }
   };

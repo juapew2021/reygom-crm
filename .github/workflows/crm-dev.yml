@@ -22,7 +22,7 @@ jobs:
       - name: Preparar pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 11
+          version: 11.18.0
 
       - name: Preparar Node.js
         uses: actions/setup-node@v4
@@ -32,6 +32,11 @@ jobs:
 
       - name: Instalar dependencias
         run: pnpm install --frozen-lockfile
+
+      - name: Validar lint y regresiones
+        run: |
+          pnpm run lint
+          pnpm test
 
       - name: Construir CRM para DEV
         env:

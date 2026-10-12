@@ -4,6 +4,12 @@ function MainLayout({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const appVersion =
+    import.meta.env.VITE_APP_VERSION || "0.5.0-dev";
+
+  const appEnvironment =
+    import.meta.env.VITE_APP_ENV || "DEV";
+
   const logout = () => {
     localStorage.clear();
     navigate("/");
@@ -16,8 +22,7 @@ function MainLayout({ children }) {
         ? "bg-white/10 font-bold text-brand-red"
         : "text-white hover:bg-white/5 hover:text-brand-red",
     ].join(" ");
-  const appVersion = import.meta.env.VITE_APP_VERSION || '0.5.0-dev';
-  const appEnvironment = import.meta.env.VITE_APP_ENV || 'DEV';
+
   return (
     <div className="min-h-screen bg-brand-black text-white">
       <aside className="fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-black p-6">
@@ -50,6 +55,13 @@ function MainLayout({ children }) {
             Leads
           </Link>
 
+          <Link
+            to="/alquileres"
+            className={linkClass("/alquileres")}
+          >
+            Alquileres
+          </Link>
+
           <span className="block rounded-xl px-3 py-2 text-gray-500">
             Agenda
           </span>
@@ -67,10 +79,11 @@ function MainLayout({ children }) {
           >
             Cerrar sesión
           </button>
+
           <div className="mt-2 text-center text-xs text-slate-400">
-  <div>CRM {appEnvironment}</div>
-  <div>v{appVersion}</div>
-</div>
+            <div>CRM {appEnvironment}</div>
+            <div>v{appVersion}</div>
+          </div>
         </div>
       </aside>
 

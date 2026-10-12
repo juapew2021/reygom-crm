@@ -31,14 +31,21 @@ function LeadsPage() {
     setLeads(response.data);
   };
 
-  const loadProperties = async () => {
-    const response = await api.get("/properties");
-    setProperties(response.data);
-  };
 
   useEffect(() => {
-    loadLeads();
-    loadProperties();
+    const controller = new AbortController();
+    Promise.all([
+      api.get("/leads", { signal: controller.signal }),
+      api.get("/properties", { signal: controller.signal }),
+    ]).then(([leadResponse, propertyResponse]) => {
+      if (!controller.signal.aborted) {
+        setLeads(leadResponse.data);
+        setProperties(propertyResponse.data);
+      }
+    }).catch(() => {
+      if (!controller.signal.aborted) setToast("No se pudieron cargar los leads.");
+    });
+    return () => controller.abort();
   }, []);
 
   const getContact = (lead) => {
