@@ -97,28 +97,22 @@ function AlquileresPage() {
   const [externalError, setExternalError] = useState("");
   const [externalQueried, setExternalQueried] = useState(false);
 
-  const loadProperties = async () => {
-    try {
-      setLoading(true);
-      setError("");
-
-      const response = await api.get("/properties");
-
-      setProperties(Array.isArray(response.data) ? response.data : []);
-    } catch (requestError) {
-      console.error("Error cargando alquileres:", requestError);
-
-      setError(
-        requestError.response?.data?.message ||
-          "No se han podido cargar los alquileres."
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
 
   useEffect(() => {
-    loadProperties();
+    const controller = new AbortController();
+    api.get("/properties", { signal: controller.signal }).then((response) => {
+      if (!controller.signal.aborted) {
+        setProperties(Array.isArray(response.data) ? response.data : []);
+      }
+    }).catch((requestError) => {
+      if (!controller.signal.aborted) {
+        console.error("Error cargando inmuebles:", requestError);
+        setError("No se han podido cargar los inmuebles.");
+      }
+    }).finally(() => {
+      if (!controller.signal.aborted) { setLoading(false); }
+    });
+    return () => controller.abort();
   }, []);
 
   const results = useMemo(() => {

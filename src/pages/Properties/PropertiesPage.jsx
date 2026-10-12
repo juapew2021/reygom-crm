@@ -45,7 +45,20 @@ function PropertiesPage() {
   };
 
   useEffect(() => {
-    loadProperties();
+    const controller = new AbortController();
+    api.get("/properties", { signal: controller.signal }).then((response) => {
+      if (!controller.signal.aborted) {
+        setProperties(Array.isArray(response.data) ? response.data : []);
+      }
+    }).catch((requestError) => {
+      if (!controller.signal.aborted) {
+        console.error("Error cargando inmuebles:", requestError);
+        setError("No se han podido cargar los inmuebles.");
+      }
+    }).finally(() => {
+      if (!controller.signal.aborted) { setLoading(false); }
+    });
+    return () => controller.abort();
   }, []);
 
   const handleChange = ({ target: { name, value } }) => {
