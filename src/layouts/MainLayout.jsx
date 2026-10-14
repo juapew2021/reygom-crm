@@ -34,6 +34,7 @@ function MainLayout({ children }) {
         </h1>
 
         <nav className="space-y-2">
+<Link to="/submissions" className={linkClass("/submissions")}>Anuncios recibidos</Link>
           <Link
             to="/dashboard"
             className={linkClass("/dashboard")}

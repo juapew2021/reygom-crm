@@ -1,3 +1,6 @@
+import PublishPropertyPage from "./pages/Publications/PublishPropertyPage";
+import VerifySubmissionPage from "./pages/Publications/VerifySubmissionPage";
+import SubmissionsReviewPage from "./pages/Publications/SubmissionsReviewPage";
 import {
   BrowserRouter as Router,
   Route,
@@ -74,7 +77,10 @@ function App() {
             </ProtectedRoute>
           }
         />
-      </Routes>
+      <Route path="/publicar" element={<PublishPropertyPage />} />
+<Route path="/publicar/verificar" element={<VerifySubmissionPage />} />
+<Route path="/submissions" element={<ProtectedRoute><SubmissionsReviewPage /></ProtectedRoute>} />
+</Routes>
     </Router>
   );
 }

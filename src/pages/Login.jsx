@@ -42,6 +42,7 @@ function Login() {
             INGRESAR AL SISTEMA
           </button>
         </form>
+<a href="/publicar" className="mt-5 block text-center text-brand-red underline">Publicar un inmueble en alquiler o venta</a>
       </div>
     </div>
   );
