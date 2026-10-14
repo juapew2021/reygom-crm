@@ -250,8 +250,8 @@ function AlquileresPage() {
             ? null
             : Number(externalFilters.price_max),
         owner_only: externalFilters.owner_only,
-        long_term: externalFilters.long_term,
-        max_age_hours: Number(externalFilters.max_age_hours) || 72,
+        long_term: externalFilters.rental_kind === "room" ? false : externalFilters.long_term,
+        max_age_hours: externalFilters.rental_kind === "room" ? null : Number(externalFilters.max_age_hours) || 72,
         sources: externalFilters.rental_kind === "room" ? externalFilters.sources.filter(source => ["fotocasa", "pisoscom"].includes(source)) : externalFilters.sources,
       };
 
@@ -379,7 +379,7 @@ function AlquileresPage() {
               </label>}
             </div>
             {externalFilters.rental_kind === "room" && <div className="rounded-xl bg-slate-50 p-3 text-sm text-gray-700">
-              <p>Habitaciones: Fotocasa y Pisos.com. La compatibilidad se comprueba con el texto del anuncio. Una habitación doble no confirma que admita parejas.</p>
+              <p>Habitaciones: Fotocasa y Pisos.com. La compatibilidad se comprueba con el texto del anuncio. Una habitación doble no confirma que admita parejas. La antigüedad y duración de estancia deben confirmarse con el anunciante.</p>
               <label className="mt-2 flex gap-2"><input type="checkbox" checked={externalFilters.include_unconfirmed_occupancy} onChange={event => updateExternalFilter("include_unconfirmed_occupancy",event.target.checked)} />Incluir ocupación sin confirmar (consultar al anunciante)</label>
             </div>}
 
@@ -437,6 +437,7 @@ function AlquileresPage() {
                   type="number"
                   min="1"
                   max="720"
+                  disabled={externalFilters.rental_kind === "room"}
                   value={externalFilters.max_age_hours}
                   onChange={(event) =>
                     updateExternalFilter("max_age_hours", event.target.value)
@@ -492,7 +493,8 @@ function AlquileresPage() {
               <label className="flex items-center gap-2 self-end pb-2">
                 <input
                   type="checkbox"
-                  checked={externalFilters.long_term}
+                  disabled={externalFilters.rental_kind === "room"}
+                  checked={externalFilters.rental_kind === "room" ? false : externalFilters.long_term}
                   onChange={(event) =>
                     updateExternalFilter("long_term", event.target.checked)
                   }
@@ -809,7 +811,7 @@ function ExternalListingCard({ listing }) {
         {listing.rental_kind === "room" && <div className="mt-3 rounded-xl bg-slate-50 p-3 text-sm">
           <p className="font-bold">{listing.occupancy_status === "confirmed" ? (listing.room_occupancy === "couple" ? "Admite pareja según el anuncio" : "Para una persona según el anuncio") : "Ocupación sin confirmar: consultar"}</p>
           {listing.occupancy_evidence && <p>{listing.occupancy_evidence}</p>}
-          {listing.description && <details className="mt-2"><summary>Descripción del anuncio</summary><p className="whitespace-pre-line">{listing.description}</p></details>}
+          {listing.description && <details className="mt-2"><summary>Texto disponible del anuncio</summary><p className="whitespace-pre-line">{listing.description}</p></details>}
         </div>}
         {listing.posted_label && (
           <p className="mt-3 text-xs text-gray-500">{listing.posted_label}</p>
