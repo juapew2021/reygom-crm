@@ -252,7 +252,7 @@ function AlquileresPage() {
         owner_only: externalFilters.owner_only,
         long_term: externalFilters.rental_kind === "room" ? false : externalFilters.long_term,
         max_age_hours: externalFilters.rental_kind === "room" ? null : Number(externalFilters.max_age_hours) || 72,
-        sources: externalFilters.rental_kind === "room" ? externalFilters.sources.filter(source => ["fotocasa", "pisoscom"].includes(source)) : externalFilters.sources,
+        sources: externalFilters.sources,
       };
 
       await searchCrawlerInBatches(payload, {
@@ -368,7 +368,7 @@ function AlquileresPage() {
           <div className="mt-5 space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block text-gray-700">Qué buscas
-                <select className="mt-1 w-full rounded-xl border p-3" value={externalFilters.rental_kind} disabled={externalLoading} onChange={event => setExternalFilters(previous => ({...previous, rental_kind:event.target.value, bedrooms_min:event.target.value === "room" ? "" : "2", bathrooms_min:event.target.value === "room" ? "" : "1", price_min:event.target.value === "room" ? "0" : previous.price_min, sources:event.target.value === "room" ? ["fotocasa","pisoscom"] : EXTERNAL_SOURCES.map(source => source.id)}))}>
+                <select className="mt-1 w-full rounded-xl border p-3" value={externalFilters.rental_kind} disabled={externalLoading} onChange={event => setExternalFilters(previous => ({...previous, rental_kind:event.target.value, bedrooms_min:event.target.value === "room" ? "" : "2", bathrooms_min:event.target.value === "room" ? "" : "1", price_min:event.target.value === "room" ? "0" : previous.price_min, sources:previous.sources}))}>
                   <option value="entire">Vivienda completa</option><option value="room">Habitación en alquiler</option>
                 </select>
               </label>
@@ -379,7 +379,7 @@ function AlquileresPage() {
               </label>}
             </div>
             {externalFilters.rental_kind === "room" && <div className="rounded-xl bg-slate-50 p-3 text-sm text-gray-700">
-              <p>Habitaciones: Fotocasa y Pisos.com. La compatibilidad se comprueba con el texto del anuncio. Una habitación doble no confirma que admita parejas. La antigüedad y duración de estancia deben confirmarse con el anunciante.</p>
+              <p>Puedes seleccionar los mismos portales que para vivienda completa. Los portales sin búsqueda de habitaciones configurada se indicarán en los avisos. La compatibilidad se comprueba con el texto del anuncio. Una habitación doble no confirma que admita parejas. La antigüedad y duración de estancia deben confirmarse con el anunciante.</p>
               <label className="mt-2 flex gap-2"><input type="checkbox" checked={externalFilters.include_unconfirmed_occupancy} onChange={event => updateExternalFilter("include_unconfirmed_occupancy",event.target.checked)} />Incluir ocupación sin confirmar (consultar al anunciante)</label>
             </div>}
 
@@ -511,7 +511,7 @@ function AlquileresPage() {
                 Portales a consultar
               </span>
               <div className="mt-2 flex flex-wrap gap-3">
-                {EXTERNAL_SOURCES.filter(source => externalFilters.rental_kind !== "room" || ["fotocasa", "pisoscom"].includes(source.id)).map((source) => (
+                {EXTERNAL_SOURCES.map((source) => (
                   <label
                     key={source.id}
                     className={[
