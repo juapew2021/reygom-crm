@@ -74,6 +74,9 @@ const OWNER_TYPE_LABELS = {
 };
 
 const DEFAULT_EXTERNAL_FILTERS = {
+  rental_kind: "entire",
+  room_occupancy: "single",
+  include_unconfirmed_occupancy: false,
   city: "Barcelona",
   bedrooms_min: "2",
   bathrooms_min: "1",
@@ -225,10 +228,13 @@ function AlquileresPage() {
       const cities = [primaryCity, ...extraCities];
 
       const payload = {
+        rental_kind: externalFilters.rental_kind,
+        room_occupancy: externalFilters.room_occupancy,
+        include_unconfirmed_occupancy: externalFilters.include_unconfirmed_occupancy,
         city: primaryCity,
         cities,
         bedrooms_min:
-          externalFilters.bedrooms_min === ""
+          externalFilters.rental_kind === "room" || externalFilters.bedrooms_min === ""
             ? null
             : Number(externalFilters.bedrooms_min),
         bathrooms_min:
@@ -246,7 +252,7 @@ function AlquileresPage() {
         owner_only: externalFilters.owner_only,
         long_term: externalFilters.long_term,
         max_age_hours: Number(externalFilters.max_age_hours) || 72,
-        sources: externalFilters.sources,
+        sources: externalFilters.rental_kind === "room" ? externalFilters.sources.filter(source => ["fotocasa", "pisoscom"].includes(source)) : externalFilters.sources,
       };
 
       await searchCrawlerInBatches(payload, {
@@ -360,6 +366,23 @@ function AlquileresPage() {
 
         {queryType === "externa" && (
           <div className="mt-5 space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block text-gray-700">Qué buscas
+                <select className="mt-1 w-full rounded-xl border p-3" value={externalFilters.rental_kind} disabled={externalLoading} onChange={event => setExternalFilters(previous => ({...previous, rental_kind:event.target.value, bedrooms_min:event.target.value === "room" ? "" : "2", bathrooms_min:event.target.value === "room" ? "" : "1", price_min:event.target.value === "room" ? "0" : previous.price_min, sources:event.target.value === "room" ? ["fotocasa","pisoscom"] : EXTERNAL_SOURCES.map(source => source.id)}))}>
+                  <option value="entire">Vivienda completa</option><option value="room">Habitación en alquiler</option>
+                </select>
+              </label>
+              {externalFilters.rental_kind === "room" && <label className="block text-gray-700">Para quién
+                <select className="mt-1 w-full rounded-xl border p-3" disabled={externalLoading} value={externalFilters.room_occupancy} onChange={event => updateExternalFilter("room_occupancy",event.target.value)}>
+                  <option value="single">Una persona</option><option value="couple">Pareja</option>
+                </select>
+              </label>}
+            </div>
+            {externalFilters.rental_kind === "room" && <div className="rounded-xl bg-slate-50 p-3 text-sm text-gray-700">
+              <p>Habitaciones: Fotocasa y Pisos.com. La compatibilidad se comprueba con el texto del anuncio. Una habitación doble no confirma que admita parejas.</p>
+              <label className="mt-2 flex gap-2"><input type="checkbox" checked={externalFilters.include_unconfirmed_occupancy} onChange={event => updateExternalFilter("include_unconfirmed_occupancy",event.target.checked)} />Incluir ocupación sin confirmar (consultar al anunciante)</label>
+            </div>}
+
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <label className="block">
                 <span className="text-xs font-bold uppercase tracking-wide text-gray-500">
@@ -382,6 +405,7 @@ function AlquileresPage() {
                 <input
                   type="number"
                   min="0"
+                  disabled={externalFilters.rental_kind === "room"}
                   value={externalFilters.bedrooms_min}
                   onChange={(event) =>
                     updateExternalFilter("bedrooms_min", event.target.value)
@@ -485,7 +509,7 @@ function AlquileresPage() {
                 Portales a consultar
               </span>
               <div className="mt-2 flex flex-wrap gap-3">
-                {EXTERNAL_SOURCES.map((source) => (
+                {EXTERNAL_SOURCES.filter(source => externalFilters.rental_kind !== "room" || ["fotocasa", "pisoscom"].includes(source.id)).map((source) => (
                   <label
                     key={source.id}
                     className={[
@@ -782,6 +806,11 @@ function ExternalListingCard({ listing }) {
           </div>
         </div>
 
+        {listing.rental_kind === "room" && <div className="mt-3 rounded-xl bg-slate-50 p-3 text-sm">
+          <p className="font-bold">{listing.occupancy_status === "confirmed" ? (listing.room_occupancy === "couple" ? "Admite pareja según el anuncio" : "Para una persona según el anuncio") : "Ocupación sin confirmar: consultar"}</p>
+          {listing.occupancy_evidence && <p>{listing.occupancy_evidence}</p>}
+          {listing.description && <details className="mt-2"><summary>Descripción del anuncio</summary><p className="whitespace-pre-line">{listing.description}</p></details>}
+        </div>}
         {listing.posted_label && (
           <p className="mt-3 text-xs text-gray-500">{listing.posted_label}</p>
         )}
