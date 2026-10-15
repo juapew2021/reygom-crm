@@ -13,9 +13,10 @@ function Login() {
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('role', response.data.user.role);
       localStorage.removeItem('officeId');
+      sessionStorage.removeItem('accessNotice');
       navigate('/dashboard');
-    } catch {
-      alert('Credenciales incorrectas');
+    } catch (error) {
+      alert(error.response?.data?.message || 'No se ha podido iniciar sesión.');
     }
   };
 
@@ -25,6 +26,7 @@ function Login() {
         <h2 className="text-3xl font-bold text-center mb-6 text-brand-black">
           ReyGom <span className="text-brand-red">CRM</span>
         </h2>
+        {sessionStorage.getItem('accessNotice')&&<p role="alert" className="mb-4 rounded-lg bg-amber-50 p-3 text-amber-900">{sessionStorage.getItem('accessNotice')}</p>}
         <form onSubmit={handleLogin} className="space-y-4">
           <input 
             className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-brand-red outline-none  text-black p-3 rounded font-bold"
