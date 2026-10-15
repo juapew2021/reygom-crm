@@ -23,9 +23,10 @@ function MainLayout({ children }) {
   const appEnvironment =
     import.meta.env.VITE_APP_ENV || "DEV";
 
-  const logout = () => {
-    localStorage.clear();
-    navigate("/");
+  const logout = async () => {
+    try { await api.post('/logout'); }
+    catch { /* El cierre local también funciona sin conexión. */ }
+    finally { localStorage.clear(); navigate('/'); }
   };
 
   const linkClass = (path) =>
@@ -38,7 +39,7 @@ function MainLayout({ children }) {
 
   return (
     <div className="min-h-screen bg-brand-black text-white">
-      <aside className="fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-black p-6">
+      <aside className="fixed inset-y-0 left-0 z-40 flex w-64 flex-col overflow-y-auto bg-black p-6">
         <h1 className="mb-10 text-2xl font-bold">
           ReyGom{" "}
           <span className="text-brand-red">
@@ -50,6 +51,7 @@ function MainLayout({ children }) {
 {identity.role==='superadmin'?<label className="mt-2 block">Oficina activa<select aria-label="Oficina activa" className="mt-1 w-full rounded-lg bg-slate-800 p-2 text-white" value={identity.organization_id} onChange={e=>{localStorage.setItem('officeId',e.target.value);window.location.assign('/dashboard');}}>{offices.map(o=><option key={o.id} value={o.id}>{o.name}{o.status==='inactive'?' (inactiva)':''}</option>)}</select></label>:<p>{identity.office_name}</p>}</div>}
         {accessError&&<p role="alert" className="mb-4 text-red-300">{accessError}</p>}
         <nav className="space-y-2">
+{identity?.role==='superadmin'&&<Link to="/history" className={linkClass('/history')}>Historial de usuarios</Link>}
 {identity&&['admin','superadmin'].includes(identity.role)&&<Link to="/administration" className={linkClass('/administration')}>{identity.role==='superadmin'?'Oficinas y equipo':'Mi equipo'}</Link>}
 {identity&&['admin','superadmin'].includes(identity.role)&&<Link to="/submissions" className={linkClass("/submissions")}>Anuncios recibidos</Link>}
           <Link

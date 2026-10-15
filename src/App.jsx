@@ -1,3 +1,4 @@
+import HistoryPage from "./pages/History/HistoryPage";
 import OfficeAdministrationPage from "./pages/Offices/OfficeAdministrationPage";
 import PublishPropertyPage from "./pages/Publications/PublishPropertyPage";
 import VerifySubmissionPage from "./pages/Publications/VerifySubmissionPage";
@@ -20,6 +21,7 @@ function App() {
   return (
     <Router>
       <Routes>
+<Route path="/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
 <Route path="/administration" element={<ProtectedRoute><OfficeAdministrationPage /></ProtectedRoute>} />
         <Route
           path="/"
