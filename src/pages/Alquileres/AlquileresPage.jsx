@@ -78,6 +78,7 @@ const DEFAULT_EXTERNAL_FILTERS = {
   rental_kind: "entire",
   room_occupancy: "single",
   include_unconfirmed_occupancy: false,
+  postal_code: "",
   city: "Barcelona",
   bedrooms_min: "2",
   bathrooms_min: "1",
@@ -123,6 +124,7 @@ function AlquileresPage() {
 
   const [externalFilters, setExternalFilters] = useState(DEFAULT_EXTERNAL_FILTERS);
   const [externalResults, setExternalResults] = useState([]);
+  const [unverifiedResults, setUnverifiedResults] = useState([]);
   const [externalSourceErrors, setExternalSourceErrors] = useState({});
   const [externalSourceNotices, setExternalSourceNotices] = useState({});
   const [externalLoading, setExternalLoading] = useState(false);
@@ -212,6 +214,7 @@ function AlquileresPage() {
 
   const handleExternalSearch = async () => {
     if (externalAbort.current) return;
+    if (externalFilters.postal_code && !/^[0-9]{5}$/.test(externalFilters.postal_code)) {setExternalError("Introduce un código postal de cinco cifras.");return;}
     const controller = new AbortController();
     externalAbort.current = controller;
     try {
@@ -220,18 +223,21 @@ function AlquileresPage() {
       setExternalSourceErrors({});
       setExternalSourceNotices({});
       setExternalResults([]);
+      setUnverifiedResults([]);
       setExternalQueried(true);
 
       const primaryCity = externalFilters.city.trim() || "Barcelona";
       const extraCities = (externalFilters.metroCities || []).filter(
         (cityName) => cityName.toLowerCase() !== primaryCity.toLowerCase()
       );
-      const cities = [primaryCity, ...extraCities];
+      const cities = externalFilters.postal_code ? [primaryCity] : [primaryCity, ...extraCities];
 
       const payload = {
         rental_kind: externalFilters.rental_kind,
         room_occupancy: externalFilters.room_occupancy,
         include_unconfirmed_occupancy: externalFilters.include_unconfirmed_occupancy,
+        postal_code: externalFilters.postal_code || null,
+        verify_location: true,
         city: primaryCity,
         cities,
         bedrooms_min:
@@ -262,6 +268,7 @@ function AlquileresPage() {
         onProgress: (progress) => {
           if (externalAbort.current !== controller) return;
           setExternalResults(progress.listings);
+          setUnverifiedResults(progress.unverifiedListings || []);
           setExternalSourceErrors(progress.errors);
           setExternalSourceNotices(progress.notices);
           setExternalProgress({ completed: progress.completed, total: progress.total });
@@ -385,6 +392,11 @@ function AlquileresPage() {
             </div>}
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <label className="block text-gray-700">Código postal (opcional)
+                <input className="mt-1 w-full rounded-xl border p-3" inputMode="numeric" maxLength={5} value={externalFilters.postal_code} disabled={externalLoading} placeholder="Ej. 08500" onChange={event => setExternalFilters(previous => ({...previous, postal_code:event.target.value.replace(/\D/g,""), city:event.target.value === "08500" ? "Vic" : previous.city, metroCities:[]}))} />
+                <span className="text-xs">Con código postal se consulta solo la ciudad indicada. Los anuncios sin ubicación verificable se muestran aparte.</span>
+              </label>
+
               <label className="block">
                 <span className="text-xs font-bold uppercase tracking-wide text-gray-500">
                   Ciudad
@@ -551,6 +563,7 @@ function AlquileresPage() {
                   >
                     <input
                       type="checkbox"
+                      disabled={Boolean(externalFilters.postal_code)}
                       checked={(externalFilters.metroCities || []).includes(metro.id)}
                       onChange={() => toggleMetroCity(metro.id)}
                       className="mr-2 h-3 w-3 align-middle"
@@ -636,7 +649,7 @@ function AlquileresPage() {
             </div>
           ) : externalError && externalResults.length === 0 ? null : externalResults.length === 0 ? (
             <div className="rounded-3xl bg-white p-8 text-center text-gray-600">
-              {Object.keys(externalSourceErrors).length > 0 || Object.values(externalSourceNotices).some(notice => notice.kind !== "no_matches")
+              {unverifiedResults.length > 0 ? "No hay coincidencias con ubicación confirmada. Revisa los anuncios sin confirmar." : Object.keys(externalSourceErrors).length > 0 || Object.values(externalSourceNotices).some(notice => notice.kind !== "no_matches")
                 ? "No se han obtenido anuncios de los portales que respondieron. Revisa los avisos de la consulta."
                 : "No se han encontrado anuncios con estos criterios."}
             </div>
@@ -651,6 +664,7 @@ function AlquileresPage() {
             </div>
           )}
 
+          {unverifiedResults.length > 0 && <details className="mt-6 rounded-2xl bg-amber-50 p-4 text-amber-900"><summary className="cursor-pointer font-bold">Ubicación sin confirmar ({unverifiedResults.length})</summary><p className="my-3">Estos anuncios no se incluyen en las coincidencias confirmadas. Falta comprobar el municipio o el código postal con el anunciante.</p><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{unverifiedResults.map(listing => <ExternalListingCard key={listing.url} listing={listing} />)}</div></details>}
           <CrawlerMessages title="Portales que no se pudieron consultar" messages={externalSourceErrors} />
           <CrawlerMessages title="Cobertura no configurada" messages={Object.fromEntries(Object.entries(externalSourceNotices).filter(entry => entry[1].kind === "unsupported_city"))} neutral />
           <CrawlerMessages title="Consultas sin resultados" messages={Object.fromEntries(Object.entries(externalSourceNotices).filter(entry => entry[1].kind !== "unsupported_city"))} neutral />
@@ -794,8 +808,10 @@ function ExternalListingCard({ listing }) {
 
         <p className="mt-2 text-sm text-gray-500">
           {listing.location || "Ubicación no indicada"}
+          {listing.postal_code && ` · CP ${listing.postal_code}`}
         </p>
 
+        <p className="mt-2 text-xs font-bold">{listing.location_status === "unknown" ? "Ubicación sin confirmar" : listing.location_status === "confirmed" ? "Ubicación comprobada con los datos publicados" : ""}</p>
         <p className="mt-3 text-xl font-extrabold">{formattedPrice}</p>
 
         <div className="mt-4 grid grid-cols-2 gap-3 rounded-2xl bg-gray-100 p-3 text-center text-sm">

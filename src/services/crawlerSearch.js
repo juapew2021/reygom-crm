@@ -1,5 +1,5 @@
 export function planCrawlerBatches(payload) {
-  const cities = [...new Set((payload.cities?.length ? payload.cities : [payload.city || "Barcelona"]).map(city => city.trim()).filter(Boolean))];
+  const cities = [...new Set((payload.postal_code ? [payload.city || "Barcelona"] : payload.cities?.length ? payload.cities : [payload.city || "Barcelona"]).map(city => city.trim()).filter(Boolean))];
   const sources = [...new Set(payload.sources || [])];
   if (!sources.length) throw new Error("Selecciona al menos un portal para consultar.");
   return cities.flatMap(city => {
@@ -28,10 +28,11 @@ export async function searchCrawlerInBatches(payload, { endpoint, signal, onProg
   const batches = planCrawlerBatches(payload);
   const total = batches.reduce((sum, batch) => sum + batch.sources.length, 0);
   const listings = new Map();
+  const unverifiedListings = new Map();
   const errors = {};
   const notices = {};
   let completed = 0;
-  const snapshot = () => ({ completed, total, listings: [...listings.values()], errors: { ...errors }, notices: { ...notices } });
+  const snapshot = () => ({ completed, total, listings: [...listings.values()], unverifiedListings: [...unverifiedListings.values()].filter(listing => !listings.has(listing.url)), errors: { ...errors }, notices: { ...notices } });
   onProgress(snapshot());
   for (const batch of batches) {
     signal?.throwIfAborted();
@@ -46,6 +47,7 @@ export async function searchCrawlerInBatches(payload, { endpoint, signal, onProg
     if (!response.ok) throw new Error("HTTP " + response.status);
     const data = await response.json();
     for (const listing of Array.isArray(data.listings) ? data.listings : []) if (typeof listing.url === "string" && /^https?:\/\//.test(listing.url)) listings.set(listing.url, listing);
+    for (const listing of Array.isArray(data.unverified_listings) ? data.unverified_listings : []) if (typeof listing.url === "string" && /^https?:\/\//.test(listing.url)) unverifiedListings.set(listing.url, listing);
     for (const [source, message] of Object.entries(data.errors || {})) {
       const key = source + " (" + batch.city + ")";
       if (String(message).includes("todavía no está configurada")) notices[key] = { kind: "unsupported_city", message: String(message) };
