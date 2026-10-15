@@ -53,6 +53,7 @@ const EXTERNAL_SOURCES = [
 ];
 
 const METRO_CITIES = [
+  { id: "Vic", label: "Vic" },
   { id: "Hospitalet de Llobregat", label: "L'Hospitalet de Llobregat" },
   { id: "El Prat de Llobregat", label: "El Prat de Llobregat" },
   { id: "Badalona", label: "Badalona" },
@@ -535,7 +536,7 @@ function AlquileresPage() {
 
             <div>
               <span className="text-xs font-bold uppercase tracking-wide text-gray-500">
-                Municipios del area metropolitana
+                Municipios adicionales
               </span>
               <div className="mt-2 flex flex-wrap gap-3">
                 {METRO_CITIES.map((metro) => (
