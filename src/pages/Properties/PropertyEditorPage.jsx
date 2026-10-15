@@ -24,6 +24,11 @@ const emptyForm = {
   property_type: "Piso",
   status: "Disponible",
   cover_image: "",
+  country_code: "ES",
+  country: "España",
+  state_code: "",
+  state: "",
+  postal_code: "",
   city: "",
   province: "",
   bedrooms: "",
@@ -80,6 +85,11 @@ function PropertyEditor() {
           property.status || "Disponible",
         cover_image:
           property.cover_image || "",
+        country_code: property.country_code || "ES",
+        country: property.country || "",
+        state_code: property.state_code || "",
+        state: property.state || "",
+        postal_code: property.postal_code || "",
         city: property.city || "",
         province: property.province || "",
         bedrooms:
@@ -129,6 +139,11 @@ function PropertyEditor() {
           property.status || "Disponible",
         cover_image:
           property.cover_image || "",
+        country_code: property.country_code || "ES",
+        country: property.country || "",
+        state_code: property.state_code || "",
+        state: property.state || "",
+        postal_code: property.postal_code || "",
         city: property.city || "",
         province: property.province || "",
         bedrooms:

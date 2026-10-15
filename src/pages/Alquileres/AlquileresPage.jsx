@@ -5,6 +5,7 @@ import { Search } from "lucide-react";
 import api from "../../services/api";
 import { groupCrawlerMessages, searchCrawlerInBatches } from "../../services/crawlerSearch";
 import MainLayout from "../../layouts/MainLayout";
+import CountryRegionFields from "../../components/CountryRegionFields";
 
 const QUERY_OPTIONS = [
   {
@@ -78,6 +79,9 @@ const DEFAULT_EXTERNAL_FILTERS = {
   rental_kind: "entire",
   room_occupancy: "single",
   include_unconfirmed_occupancy: false,
+  country_code: "ES",
+  region_code: "08",
+  province: "Barcelona",
   postal_code: "",
   city: "Barcelona",
   bedrooms_min: "2",
@@ -214,6 +218,8 @@ function AlquileresPage() {
 
   const handleExternalSearch = async () => {
     if (externalAbort.current) return;
+    if (externalFilters.country_code !== "ES") {setExternalError("La búsqueda en portales de Colombia todavía no está configurada.");return;}
+    if (!externalFilters.region_code || !externalFilters.city) {setExternalError("Selecciona provincia y municipio.");return;}
     if (externalFilters.postal_code && !/^[0-9]{5}$/.test(externalFilters.postal_code)) {setExternalError("Introduce un código postal de cinco cifras.");return;}
     const controller = new AbortController();
     externalAbort.current = controller;
@@ -236,6 +242,8 @@ function AlquileresPage() {
         rental_kind: externalFilters.rental_kind,
         room_occupancy: externalFilters.room_occupancy,
         include_unconfirmed_occupancy: externalFilters.include_unconfirmed_occupancy,
+        country_code: externalFilters.country_code,
+        region_code: externalFilters.region_code,
         postal_code: externalFilters.postal_code || null,
         verify_location: true,
         city: primaryCity,
@@ -374,6 +382,9 @@ function AlquileresPage() {
 
         {queryType === "externa" && (
           <div className="mt-5 space-y-4">
+            <CountryRegionFields value={externalFilters} disabled={externalLoading} required onChange={selection=>{setExternalFilters(previous=>({...previous,...selection,postal_code:"",metroCities:[]}));setExternalResults([]);setUnverifiedResults([]);setExternalSourceErrors({});setExternalSourceNotices({});setExternalProgress({completed:0,total:0});setExternalQueried(false);setExternalError("");}} />
+            {externalFilters.country_code === "CO" && <p role="status" className="rounded-xl bg-amber-50 p-4 text-amber-900">Puedes seleccionar departamentos y municipios de Colombia. La búsqueda en portales colombianos todavía no está configurada.</p>}
+
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block text-gray-700">Qué buscas
                 <select className="mt-1 w-full rounded-xl border p-3" value={externalFilters.rental_kind} disabled={externalLoading} onChange={event => setExternalFilters(previous => ({...previous, rental_kind:event.target.value, bedrooms_min:event.target.value === "room" ? "" : "2", bathrooms_min:event.target.value === "room" ? "" : "1", price_min:event.target.value === "room" ? "0" : previous.price_min, sources:previous.sources}))}>
@@ -393,23 +404,11 @@ function AlquileresPage() {
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <label className="block text-gray-700">Código postal (opcional)
-                <input className="mt-1 w-full rounded-xl border p-3" inputMode="numeric" maxLength={5} value={externalFilters.postal_code} disabled={externalLoading} placeholder="Ej. 08500" onChange={event => setExternalFilters(previous => ({...previous, postal_code:event.target.value.replace(/\D/g,""), city:event.target.value === "08500" ? "Vic" : previous.city, metroCities:[]}))} />
+                <input className="mt-1 w-full rounded-xl border p-3" inputMode="numeric" maxLength={externalFilters.country_code === "CO" ? 6 : 5} value={externalFilters.postal_code} disabled={externalLoading} placeholder="Ej. 08500" onChange={event => setExternalFilters(previous => ({...previous, postal_code:event.target.value.replace(/\D/g,""), region_code:event.target.value === "08500" && previous.country_code === "ES" ? "08" : previous.region_code, city_code:"", city:event.target.value === "08500" && previous.country_code === "ES" ? "Vic" : previous.city, metroCities:[]}))} />
                 <span className="text-xs">Con código postal se consulta solo la ciudad indicada. Los anuncios sin ubicación verificable se muestran aparte.</span>
               </label>
 
-              <label className="block">
-                <span className="text-xs font-bold uppercase tracking-wide text-gray-500">
-                  Ciudad
-                </span>
-                <input
-                  type="text"
-                  value={externalFilters.city}
-                  onChange={(event) =>
-                    updateExternalFilter("city", event.target.value)
-                  }
-                  className="mt-1 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100"
-                />
-              </label>
+
 
               <label className="block">
                 <span className="text-xs font-bold uppercase tracking-wide text-gray-500">
@@ -563,7 +562,7 @@ function AlquileresPage() {
                   >
                     <input
                       type="checkbox"
-                      disabled={Boolean(externalFilters.postal_code)}
+                      disabled={Boolean(externalFilters.postal_code) || externalFilters.country_code !== "ES" || externalFilters.region_code !== "08"}
                       checked={(externalFilters.metroCities || []).includes(metro.id)}
                       onChange={() => toggleMetroCity(metro.id)}
                       className="mr-2 h-3 w-3 align-middle"
@@ -577,7 +576,7 @@ function AlquileresPage() {
             <button
               type="button"
               onClick={handleExternalSearch}
-              disabled={externalLoading}
+              disabled={externalLoading || externalFilters.country_code !== "ES" || !externalFilters.region_code || !externalFilters.city}
               className="rounded-xl bg-red-600 px-5 py-3 font-bold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {externalLoading ? "Consultando portales..." : "Consultar"}
