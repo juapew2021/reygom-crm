@@ -51,6 +51,7 @@ function MainLayout({ children }) {
 {identity.role==='superadmin'?<label className="mt-2 block">Oficina activa<select aria-label="Oficina activa" className="mt-1 w-full rounded-lg bg-slate-800 p-2 text-white" value={identity.organization_id} onChange={e=>{localStorage.setItem('officeId',e.target.value);window.location.assign('/dashboard');}}>{offices.map(o=><option key={o.id} value={o.id}>{o.name}{o.status==='inactive'?' (inactiva)':''}</option>)}</select></label>:<p>{identity.office_name}</p>}</div>}
         {accessError&&<p role="alert" className="mb-4 text-red-300">{accessError}</p>}
         <nav className="space-y-2">
+{identity&&['admin','superadmin'].includes(identity.role)&&<Link to="/mail" className={linkClass("/mail")}>Correo</Link>}
 {identity?.role==='superadmin'&&<Link to="/access" className={linkClass('/access')}>Accesos autorizados</Link>}
 {identity?.role==='superadmin'&&<Link to="/history" className={linkClass('/history')}>Historial de usuarios</Link>}
 {identity&&['admin','superadmin'].includes(identity.role)&&<Link to="/administration" className={linkClass('/administration')}>{identity.role==='superadmin'?'Oficinas y equipo':'Mi equipo'}</Link>}

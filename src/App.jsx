@@ -1,3 +1,4 @@
+import MailPage from "./pages/Mail/MailPage";
 import AccessPage from "./pages/Access/AccessPage";
 import HistoryPage from "./pages/History/HistoryPage";
 import OfficeAdministrationPage from "./pages/Offices/OfficeAdministrationPage";
@@ -22,6 +23,7 @@ function App() {
   return (
     <Router>
       <Routes>
+<Route path="/mail" element={<ProtectedRoute><MailPage /></ProtectedRoute>} />
 <Route path="/access" element={<ProtectedRoute><AccessPage /></ProtectedRoute>} />
 <Route path="/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
 <Route path="/administration" element={<ProtectedRoute><OfficeAdministrationPage /></ProtectedRoute>} />
