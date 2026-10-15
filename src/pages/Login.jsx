@@ -11,7 +11,8 @@ function Login() {
     try {
       const response = await api.post('/login', credentials);
       localStorage.setItem('token', response.data.token);
-      localStorage.setItem('role', response.data.role);
+      localStorage.setItem('role', response.data.user.role);
+      localStorage.removeItem('officeId');
       navigate('/dashboard');
     } catch {
       alert('Credenciales incorrectas');

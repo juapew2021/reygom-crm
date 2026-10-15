@@ -11,6 +11,8 @@ api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
+  const office = localStorage.getItem('officeId');
+  if (token && office && config.url !== '/login') config.headers['X-Office-Id'] = office;
   return config;
 });
 

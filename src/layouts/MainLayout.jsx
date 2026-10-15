@@ -1,6 +1,19 @@
+import { useEffect, useState } from "react";
+import api from "../services/api";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 function MainLayout({ children }) {
+  const [identity, setIdentity] = useState(null);
+  const [offices, setOffices] = useState([]);
+  const [accessError, setAccessError] = useState('');
+  useEffect(() => {
+    let active=true;
+    api.get('/me').then(async ({data}) => {
+      if(!active)return; setIdentity(data.user);
+      if(data.user.role==='superadmin') { const result=await api.get('/offices');if(active)setOffices(result.data); }
+    }).catch(e=>{if(active)setAccessError(e.response?.data?.message||'No se pudo comprobar el acceso.');});
+    return ()=>{active=false;};
+  }, []);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -33,8 +46,12 @@ function MainLayout({ children }) {
           </span>
         </h1>
 
+        {identity && <div className="mb-5 text-sm"><p className="font-bold">{identity.username} · {identity.role==='superadmin'?'Super admin':identity.role==='admin'?'Administrador de oficina':'Agente'}</p>
+{identity.role==='superadmin'?<label className="mt-2 block">Oficina activa<select aria-label="Oficina activa" className="mt-1 w-full rounded-lg bg-slate-800 p-2 text-white" value={identity.organization_id} onChange={e=>{localStorage.setItem('officeId',e.target.value);window.location.assign('/dashboard');}}>{offices.map(o=><option key={o.id} value={o.id}>{o.name}{o.status==='inactive'?' (inactiva)':''}</option>)}</select></label>:<p>{identity.office_name}</p>}</div>}
+        {accessError&&<p role="alert" className="mb-4 text-red-300">{accessError}</p>}
         <nav className="space-y-2">
-<Link to="/submissions" className={linkClass("/submissions")}>Anuncios recibidos</Link>
+{identity&&['admin','superadmin'].includes(identity.role)&&<Link to="/administration" className={linkClass('/administration')}>{identity.role==='superadmin'?'Oficinas y equipo':'Mi equipo'}</Link>}
+{identity&&['admin','superadmin'].includes(identity.role)&&<Link to="/submissions" className={linkClass("/submissions")}>Anuncios recibidos</Link>}
           <Link
             to="/dashboard"
             className={linkClass("/dashboard")}

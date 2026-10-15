@@ -1,3 +1,4 @@
+import OfficeAdministrationPage from "./pages/Offices/OfficeAdministrationPage";
 import PublishPropertyPage from "./pages/Publications/PublishPropertyPage";
 import VerifySubmissionPage from "./pages/Publications/VerifySubmissionPage";
 import SubmissionsReviewPage from "./pages/Publications/SubmissionsReviewPage";
@@ -19,6 +20,7 @@ function App() {
   return (
     <Router>
       <Routes>
+<Route path="/administration" element={<ProtectedRoute><OfficeAdministrationPage /></ProtectedRoute>} />
         <Route
           path="/"
           element={<Login />}
