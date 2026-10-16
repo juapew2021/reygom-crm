@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import MainLayout from '../../layouts/MainLayout';
 import api from '../../services/api';
 
-const labels={'office.branding_updated':'Marca de la inmobiliaria actualizada','user.photo_updated':'Foto de perfil actualizada','access.device_revoked':'Dispositivo revocado','access.requested':'Acceso solicitado','access.approved':'Acceso autorizado','access.rejected':'Acceso rechazado','access.revoked':'Acceso revocado','access.policy_updated':'Límites de acceso modificados',
+const labels={'notification.sent':'Notificación interna enviada','office.branding_updated':'Marca de la inmobiliaria actualizada','user.photo_updated':'Foto de perfil actualizada','access.device_revoked':'Dispositivo revocado','access.requested':'Acceso solicitado','access.approved':'Acceso autorizado','access.rejected':'Acceso rechazado','access.revoked':'Acceso revocado','access.policy_updated':'Límites de acceso modificados',
  'session.login':'Inicio de sesión','session.login_failed':'Intento de acceso rechazado','session.logout':'Cierre de sesión',
  'office.created':'Oficina creada','office.updated':'Oficina actualizada','office.deleted':'Oficina eliminada',
  'user.created':'Usuario creado','user.updated':'Usuario actualizado','user.deleted':'Usuario eliminado',

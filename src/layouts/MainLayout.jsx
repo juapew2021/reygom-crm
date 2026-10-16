@@ -1,3 +1,4 @@
+import NotificationBell from "../components/NotificationBell";
 import {themeStyle} from "../utils/brandTheme";
 import "../styles/officeTheme.css";
 import { useEffect, useState } from "react";
@@ -64,6 +65,7 @@ function MainLayout({ children }) {
 {identity.role==='superadmin'?<label className="mt-2 block">Oficina activa<select aria-label="Oficina activa" className="mt-1 w-full rounded-lg bg-slate-800 p-2 text-white" value={identity.organization_id} onChange={e=>{localStorage.setItem('officeId',e.target.value);window.location.assign('/dashboard');}}>{offices.map(o=><option key={o.id} value={o.id}>{o.name}{o.status==='inactive'?' (inactiva)':''}</option>)}</select></label>:<p>{identity.office_name}</p>}</div>}
         {accessError&&<p role="alert" className="mb-4 text-red-300">{accessError}</p>}
         <nav className="space-y-2">
+{identity&&<NotificationBell className={linkClass("/notifications")}/>}
 {identity&&<Link to="/profile" className={linkClass("/profile")}>Mi perfil</Link>}
 {identity&&['admin','superadmin'].includes(identity.role)&&<Link to="/personalization" className={linkClass("/personalization")}>Personalizar inmobiliaria</Link>}
 {identity&&['admin','superadmin'].includes(identity.role)&&<Link to="/mail" className={linkClass("/mail")}>Correo</Link>}

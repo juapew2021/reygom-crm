@@ -1,3 +1,4 @@
+import NotificationsPage from "./pages/Notifications/NotificationsPage";
 import PersonalizationPage from "./pages/Personalization/PersonalizationPage";
 import MailPage from "./pages/Mail/MailPage";
 import AccessPage from "./pages/Access/AccessPage";
@@ -24,6 +25,7 @@ function App() {
   return (
     <Router>
       <Routes>
+<Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
 <Route path="/personalization" element={<ProtectedRoute><PersonalizationPage /></ProtectedRoute>} />
 <Route path="/profile" element={<ProtectedRoute><PersonalizationPage profile /></ProtectedRoute>} />
 <Route path="/mail" element={<ProtectedRoute><MailPage /></ProtectedRoute>} />
