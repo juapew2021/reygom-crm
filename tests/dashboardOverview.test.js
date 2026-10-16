@@ -1,0 +1,7 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {dashboardOverview,nextDashboardAction} from '../src/services/dashboardOverview.js';
+test('A failed request is never reported as zero activity',()=>{const d=dashboardOverview(null,null,null);assert.equal(d.properties_count,null);assert.equal(d.leads_count,null);assert.equal(d.pipeline,null);assert.equal(d.visits_today,null);});
+test('An empty but successful portfolio has a real zero and a clear first step',()=>{const d=dashboardOverview({visits_today:0,sales_count:0},[],[]);assert.equal(d.properties_count,0);assert.equal(d.leads_count,0);assert.deepEqual(d.pipeline,{});assert.equal(nextDashboardAction({pending:0,properties:0,leads:0,manager:true}).to,'/properties/new');});
+test('Only actual visible office records contribute to counts and pipeline',()=>{const properties=Array.from({length:7},(_,id)=>({id}));const d=dashboardOverview({properties_count:900},properties,[{pipeline_stage:'Nuevo'},{pipeline_stage:'En seguimiento'},{pipeline_stage:null}]);assert.equal(d.properties_count,7);assert.equal(d.latest_properties.length,4);assert.deepEqual(d.pipeline,{'Nuevo':2,'En seguimiento':1});});
+test('Verified pending reviews are prioritized for administrators only',()=>{assert.equal(nextDashboardAction({pending:3,properties:0,leads:0,manager:true}).to,'/submissions');assert.equal(nextDashboardAction({pending:3,properties:0,leads:0,manager:false}).to,'/properties/new');assert.notEqual(nextDashboardAction({pending:null,properties:null,leads:2,manager:true}).to,'/submissions');});
