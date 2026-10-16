@@ -1,3 +1,5 @@
+import {themeStyle} from "../utils/brandTheme";
+import "../styles/officeTheme.css";
 import { useEffect, useState } from "react";
 import api from "../services/api";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -14,6 +16,19 @@ function MainLayout({ children }) {
     }).catch(e=>{if(active)setAccessError(e.response?.data?.message||'No se pudo comprobar el acceso.');});
     return ()=>{active=false;};
   }, []);
+  const [branding,setBranding]=useState(null);
+  const [profile,setProfile]=useState(null);
+  useEffect(()=>{
+    let live=true,revision=0;
+    const load=()=>{
+      const current=++revision;
+      Promise.all([api.get('/office-branding'),api.get('/profile')]).then(([b,p])=>{
+        if(live&&current===revision){setBranding(b.data);setProfile(p.data);}
+      }).catch(()=>{ /* Existing navigation stays usable if personalization is unavailable. */ });
+    };
+    load();window.addEventListener('reygom-personalization-updated',load);
+    return()=>{live=false;window.removeEventListener('reygom-personalization-updated',load);};
+  },[]);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -31,26 +46,26 @@ function MainLayout({ children }) {
 
   const linkClass = (path) =>
     [
-      "block rounded-xl px-3 py-2 transition",
+      "office-nav-link block rounded-xl px-3 py-2 transition",
       location.pathname.startsWith(path)
-        ? "bg-white/10 font-bold text-brand-red"
+        ? "office-nav-active bg-white/10 font-bold"
         : "text-white hover:bg-white/5 hover:text-brand-red",
     ].join(" ");
 
   return (
-    <div className="min-h-screen bg-brand-black text-white">
-      <aside className="fixed inset-y-0 left-0 z-40 flex w-64 flex-col overflow-y-auto bg-black p-6">
-        <h1 className="mb-10 text-2xl font-bold">
-          ReyGom{" "}
-          <span className="text-brand-red">
-            CRM
-          </span>
-        </h1>
+    <div className="office-theme min-h-screen bg-brand-black text-white" style={themeStyle(branding||{})}>
+      <aside className="office-sidebar fixed inset-y-0 left-0 z-40 flex w-64 flex-col overflow-y-auto bg-black p-6">
+        <div className="mb-8">
+          {branding?.logo&&<img src={branding.logo} alt="Logo de la inmobiliaria" className="mb-3 max-h-24 w-full object-contain"/>}
+          <h1 className="break-words text-2xl font-bold">{branding?.display_name||branding?.office_name||<>ReyGom <span className="text-brand-red">CRM</span></>}</h1>
+        </div>
 
-        {identity && <div className="mb-5 text-sm"><p className="font-bold">{identity.username} · {identity.role==='superadmin'?'Super admin':identity.role==='admin'?'Administrador de oficina':'Agente'}</p>
+        {identity && <div className="mb-5 text-sm">{profile?.photo&&<img src={profile.photo} alt="Tu foto de perfil" className="mb-3 h-14 w-14 rounded-full object-cover"/>}<p className="font-bold">{identity.username} · {identity.role==='superadmin'?'Super admin':identity.role==='admin'?'Administrador de oficina':'Agente'}</p>
 {identity.role==='superadmin'?<label className="mt-2 block">Oficina activa<select aria-label="Oficina activa" className="mt-1 w-full rounded-lg bg-slate-800 p-2 text-white" value={identity.organization_id} onChange={e=>{localStorage.setItem('officeId',e.target.value);window.location.assign('/dashboard');}}>{offices.map(o=><option key={o.id} value={o.id}>{o.name}{o.status==='inactive'?' (inactiva)':''}</option>)}</select></label>:<p>{identity.office_name}</p>}</div>}
         {accessError&&<p role="alert" className="mb-4 text-red-300">{accessError}</p>}
         <nav className="space-y-2">
+{identity&&<Link to="/profile" className={linkClass("/profile")}>Mi perfil</Link>}
+{identity&&['admin','superadmin'].includes(identity.role)&&<Link to="/personalization" className={linkClass("/personalization")}>Personalizar inmobiliaria</Link>}
 {identity&&['admin','superadmin'].includes(identity.role)&&<Link to="/mail" className={linkClass("/mail")}>Correo</Link>}
 {identity?.role==='superadmin'&&<Link to="/access" className={linkClass('/access')}>Accesos autorizados</Link>}
 {identity?.role==='superadmin'&&<Link to="/history" className={linkClass('/history')}>Historial de usuarios</Link>}

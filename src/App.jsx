@@ -1,3 +1,4 @@
+import PersonalizationPage from "./pages/Personalization/PersonalizationPage";
 import MailPage from "./pages/Mail/MailPage";
 import AccessPage from "./pages/Access/AccessPage";
 import HistoryPage from "./pages/History/HistoryPage";
@@ -23,6 +24,8 @@ function App() {
   return (
     <Router>
       <Routes>
+<Route path="/personalization" element={<ProtectedRoute><PersonalizationPage /></ProtectedRoute>} />
+<Route path="/profile" element={<ProtectedRoute><PersonalizationPage profile /></ProtectedRoute>} />
 <Route path="/mail" element={<ProtectedRoute><MailPage /></ProtectedRoute>} />
 <Route path="/access" element={<ProtectedRoute><AccessPage /></ProtectedRoute>} />
 <Route path="/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
