@@ -1,3 +1,4 @@
+import RentalSearchAccess from "./components/RentalSearchAccess";
 import NotificationsPage from "./pages/Notifications/NotificationsPage";
 import PersonalizationPage from "./pages/Personalization/PersonalizationPage";
 import MailPage from "./pages/Mail/MailPage";
@@ -86,7 +87,7 @@ function App() {
           path="/alquileres"
           element={
             <ProtectedRoute>
-              <AlquileresPage />
+              <RentalSearchAccess><AlquileresPage /></RentalSearchAccess>
             </ProtectedRoute>
           }
         />
