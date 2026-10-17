@@ -1,3 +1,4 @@
+import {referenceLabel} from "../../services/propertyReference";
 import CountryRegionFields from "../CountryRegionFields";
 function PropertyForm({
   form,
@@ -23,17 +24,18 @@ function PropertyForm({
                 </span>
 
                 <span className="mt-1 block font-bold text-gray-800">
-                  {form.reference_id}
+                  {referenceLabel(form)}
                 </span>
 
                 <p className="mt-1 text-xs text-gray-500">
                   La referencia es permanente.
                 </p>
+                {form.public_reference&&form.reference_id!==form.public_reference&&<p className="mt-1 break-all text-xs text-gray-500">Referencia anterior: {form.reference_id}</p>}
               </div>
             ) : (
               <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3">
                 <span className="block text-xs font-bold uppercase tracking-wide text-red-600">
-                  RPC automático
+                  Referencia automática
                 </span>
 
                 <p className="mt-1 font-semibold text-gray-800">
@@ -41,7 +43,7 @@ function PropertyForm({
                 </p>
 
                 <p className="mt-1 text-xs text-gray-500">
-                  Ejemplo: RGESVALALB000001
+                  Ejemplo: REF: RG000001
                 </p>
               </div>
             )}

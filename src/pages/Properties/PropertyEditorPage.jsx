@@ -17,6 +17,7 @@ import PropertyMediaUploader from "../../components/properties/PropertyMediaUplo
 
 const emptyForm = {
   reference_id: "",
+  public_reference: "",
   title: "",
   description: "",
   price: "",
@@ -73,6 +74,7 @@ function PropertyEditor() {
       setForm({
         reference_id:
           property.reference_id || "",
+        public_reference: property.public_reference || "",
         title: property.title || "",
         description:
           property.description || "",
@@ -127,6 +129,7 @@ function PropertyEditor() {
       setForm({
         reference_id:
           property.reference_id || "",
+        public_reference: property.public_reference || "",
         title: property.title || "",
         description:
           property.description || "",
@@ -177,6 +180,7 @@ function PropertyEditor() {
       reference_id,
       ...formWithoutReference
     } = form;
+    delete formWithoutReference.public_reference;
 
     const payload = {
       ...formWithoutReference,

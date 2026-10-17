@@ -1,3 +1,4 @@
+import {referenceLabel,matchesPropertyReference} from "../../services/propertyReference";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
@@ -173,7 +174,7 @@ function AlquileresPage() {
       const matchesSearch =
         normalizedSearch === "" ||
         property.title?.toLowerCase().includes(normalizedSearch) ||
-        property.reference_id?.toLowerCase().includes(normalizedSearch) ||
+        matchesPropertyReference(property, search) ||
         property.city?.toLowerCase().includes(normalizedSearch) ||
         property.province?.toLowerCase().includes(normalizedSearch);
 
@@ -736,7 +737,7 @@ function AlquilerCard({ property, onEdit }) {
         </div>
 
         <p className="mt-4 text-xs font-bold text-gray-500">
-          Ref. {property.reference_id}
+          {referenceLabel(property)}
         </p>
 
         <div className="mt-6 flex flex-wrap gap-3">

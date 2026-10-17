@@ -1,3 +1,4 @@
+import {matchesPropertyReference} from "../../services/propertyReference";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Plus, Search } from "lucide-react";
@@ -72,9 +73,7 @@ function PropertiesListPage() {
         property.title
           ?.toLowerCase()
           .includes(normalizedSearch) ||
-        property.reference_id
-          ?.toLowerCase()
-          .includes(normalizedSearch) ||
+        matchesPropertyReference(property, search) ||
         property.city
           ?.toLowerCase()
           .includes(normalizedSearch) ||

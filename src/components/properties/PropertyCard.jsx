@@ -1,3 +1,4 @@
+import {referenceLabel} from "../../services/propertyReference";
 function PropertyCard({ property, onEdit, onDelete }) {
   const formattedPrice = Number(property.price || 0).toLocaleString("es-ES", {
     style: "currency",
@@ -61,7 +62,7 @@ function PropertyCard({ property, onEdit, onDelete }) {
         </div>
 
         <p className="mt-4 text-xs font-bold text-gray-500">
-          Ref. {property.reference_id}
+          {referenceLabel(property)}
         </p>
 
         <div className="mt-6 flex flex-wrap gap-3">
