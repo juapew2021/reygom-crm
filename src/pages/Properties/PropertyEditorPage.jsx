@@ -1,3 +1,4 @@
+import PropertyAnalytics from "../../components/properties/PropertyAnalytics";
 import { useEffect, useState } from "react";
 import {
   ArrowLeft,
@@ -391,6 +392,7 @@ function PropertyEditor() {
           </div>
         </section>
       )}
+      {!loading && <PropertyAnalytics key={propertyId} propertyId={propertyId} />}
     </MainLayout>
   );
 }
