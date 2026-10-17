@@ -1,3 +1,4 @@
+import PropertyPanoramas from "../../components/properties/PropertyPanoramas";
 import PropertyAnalytics from "../../components/properties/PropertyAnalytics";
 import { useEffect, useState } from "react";
 import {
@@ -392,6 +393,7 @@ function PropertyEditor() {
           </div>
         </section>
       )}
+      {!loading && <PropertyPanoramas key={"panorama-" + (propertyId || "new")} propertyId={propertyId} />}
       {!loading && <PropertyAnalytics key={propertyId} propertyId={propertyId} />}
     </MainLayout>
   );
