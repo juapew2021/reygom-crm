@@ -1,3 +1,4 @@
+import AgendaDashboard from "../components/AgendaDashboard";
 import {referenceLabel} from "../services/propertyReference";
 import {useEffect,useState} from 'react';
 import {Link} from 'react-router-dom';
@@ -40,6 +41,7 @@ export default function Dashboard(){
   <div className="overview-heading"><div><p className="overview-eyebrow">{date}</p><h1>{identity?`Hola, ${identity.username}`:'Resumen de tu oficina'}</h1><p>Tu cartera, tu equipo y el próximo paso. Todo a mano.</p></div><div className="overview-heading-actions"><button onClick={refresh} disabled={loading} className="overview-refresh" aria-label="Actualizar resumen"><RefreshCw size={17} className={loading?'overview-spinning':''} aria-hidden="true"/><span>{loading?'Actualizando…':'Actualizar'}</span></button><Link to="/properties/new" className="overview-primary bg-brand-red"><Plus size={18} aria-hidden="true"/>Añadir inmueble</Link></div></div>
   {error&&<div className="overview-error" role="alert"><p>{error}</p><button onClick={refresh} disabled={loading}>Volver a intentar</button></div>}{warning&&<p role="status" className="overview-warning">{warning}</p>}
   {!d&&loading&&<div className="overview-loading" role="status">Preparando el resumen de tu oficina…</div>}
+  <AgendaDashboard key={revision} />
   {d&&<><div className={`overview-metrics${manager?'':' overview-metrics-agent'}`} aria-label="Cifras de tu oficina" aria-busy={loading}>
    <Metric title="Inmuebles" value={d.properties_count} note="En tu cartera" to="/properties" icon={Building2}/><Metric title="Contactos" value={d.leads_count} note="Oportunidades registradas" to="/leads" icon={Users}/>{manager&&<><Metric title="Anuncios por revisar" value={pending} note="Pendientes de aprobación" to="/submissions" icon={Inbox}/><Metric title="Agentes activos" value={team} note="En esta oficina" to="/administration" icon={UsersRound}/></>}
   </div>

@@ -1,3 +1,4 @@
+import AgendaPage from "./pages/AgendaPage";
 import RentalSearchAccess from "./components/RentalSearchAccess";
 import NotificationsPage from "./pages/Notifications/NotificationsPage";
 import PersonalizationPage from "./pages/Personalization/PersonalizationPage";
@@ -38,6 +39,7 @@ function App() {
           element={<Login />}
         />
 
+        <Route path="/agenda" element={<ProtectedRoute><AgendaPage /></ProtectedRoute>} />
         <Route
           path="/dashboard"
           element={

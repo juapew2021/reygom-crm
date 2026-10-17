@@ -1,7 +1,7 @@
 import {canSearchRentals} from '../services/rentalAccess';
 import {useEffect,useRef,useState} from 'react';
 import {Link,useLocation,useNavigate} from 'react-router-dom';
-import {LayoutDashboard,Building2,Users,Search,Mail,UserRound,Palette,UsersRound,Inbox,ShieldCheck,History,Menu,X,LogOut,ChevronRight} from 'lucide-react';
+import {CalendarDays,LayoutDashboard,Building2,Users,Search,Mail,UserRound,Palette,UsersRound,Inbox,ShieldCheck,History,Menu,X,LogOut,ChevronRight} from 'lucide-react';
 import NotificationBell from '../components/NotificationBell';
 import api from '../services/api';
 import {themeStyle} from '../utils/brandTheme';
@@ -9,7 +9,7 @@ import '../styles/officeTheme.css';
 import '../styles/workspace.css';
 const roleName=role=>role==='superadmin'?'Super admin':role==='admin'?'Administrador de oficina':'Agente';
 const navigation=[
- {title:'Tu actividad',items:[['/dashboard','Resumen',LayoutDashboard],['/properties','Inmuebles',Building2],['/leads','Leads y contactos',Users],['/alquileres','Búsqueda de alquileres',Search]]},
+ {title:'Tu actividad',items:[['/dashboard','Resumen',LayoutDashboard],['/agenda','Agenda',CalendarDays],['/properties','Inmuebles',Building2],['/leads','Leads y contactos',Users],['/alquileres','Búsqueda de alquileres',Search]]},
  {title:'Comunicación',items:[['/mail','Correo',Mail],['/notifications','Notificaciones',null]]},
  {title:'Tu oficina',manager:true,items:[['/administration','Mi equipo',UsersRound],['/submissions','Anuncios recibidos',Inbox],['/personalization','Marca de la oficina',Palette]]},
  {title:'Administración global',super:true,items:[['/access','Accesos autorizados',ShieldCheck],['/history','Historial de usuarios',History]]},
