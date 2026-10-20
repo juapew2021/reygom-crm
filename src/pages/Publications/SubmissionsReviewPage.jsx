@@ -1,0 +1,23 @@
+import { useCallback, useEffect, useState } from 'react';
+import MainLayout from '../../layouts/MainLayout';
+import api from '../../services/api';
+
+const labels={awaiting_email:'Correo sin verificar',pending_review:'Pendiente de revisión',approved:'Aprobado',rejected:'Rechazado'};
+function SubmissionPhotos({id,names}){
+  const [photos,setPhotos]=useState([]);
+  useEffect(()=>{let active=true;const urls=[];Promise.all(names.map(name=>api.get(`/submissions/${id}/images/${name}`,{responseType:'blob'}).then(r=>{const url=URL.createObjectURL(r.data);urls.push(url);return url;}))).then(result=>{if(active)setPhotos(result);else urls.forEach(url=>URL.revokeObjectURL(url));}).catch(()=>{urls.forEach(url=>URL.revokeObjectURL(url));});return()=>{active=false;urls.forEach(url=>URL.revokeObjectURL(url));};},[id,names]);
+  return <div className="mt-3 grid grid-cols-3 gap-2">{photos.map((url,i)=><a key={url} href={url} target="_blank" rel="noreferrer"><img src={url} alt={`Foto del anuncio ${i+1}`} className="h-32 w-full rounded-lg object-cover"/></a>)}</div>;
+}
+export default function SubmissionsReviewPage(){
+  const [rows,setRows]=useState([]),[error,setError]=useState(''),[busy,setBusy]=useState(''),[links,setLinks]=useState({}),[notes,setNotes]=useState({});
+  const load=useCallback(async()=>{try{const r=await api.get('/submissions');setRows(r.data);setError('');}catch(e){setError(e.response?.data?.message||'No se puede cargar la bandeja de revisión.');}},[]);
+  useEffect(()=>{let active=true;api.get('/submissions').then(r=>{if(active)setRows(r.data);}).catch(e=>{if(active)setError(e.response?.data?.message||'No se puede cargar la bandeja de revisión.');});return()=>{active=false;};},[]);
+  async function review(id,decision){if(busy)return;setBusy(id);try{await api.post(`/submissions/${id}/review`,{decision,note:notes[id]||''});await load();}catch(e){setError(e.response?.data?.message||'No se pudo revisar el anuncio.');}finally{setBusy('');}}
+  async function testLink(id){try{const r=await api.get(`/submissions/${id}/outbox`);setLinks(v=>({...v,[id]:`/publicar/verificar#token=${r.data.verification_token}`}));}catch(e){setError(e.response?.data?.message||'No se puede abrir la bandeja de pruebas.');}}
+  return <MainLayout><div className="p-6"><div className="flex flex-wrap items-center justify-between gap-3"><h1 className="text-3xl font-bold">Anuncios recibidos</h1><a href="/publicar" target="_blank" rel="noreferrer" className="rounded-xl bg-brand-red px-4 py-3 font-bold">Abrir formulario público</a><button onClick={load} className="underline">Actualizar</button></div><p className="mt-2 text-slate-400">Verifica las fotos, los datos y el contacto antes de aprobar. Solo los anuncios aprobados pasan al catálogo.</p>{error&&<p role="alert" className="my-4 rounded-lg bg-red-100 p-4 text-red-900">{error}</p>}
+    <div className="mt-6 space-y-5">{rows.length===0&&!error&&<p>No hay anuncios recibidos.</p>}{rows.map(row=><article key={row.id} className="rounded-2xl bg-white p-5 text-slate-900"><p className="text-sm font-bold text-red-700">{labels[row.status]||row.status}</p><h2 className="mt-2 text-xl font-bold">{row.payload.title}</h2><p>{row.payload.operation_type} · {row.payload.price} € · {row.payload.country || 'España'} · {row.payload.city}, {row.payload.province}</p><p>{row.payload.bedrooms} habitaciones · {row.payload.bathrooms} baños · {row.payload.built_area} m²</p><p className="my-4 whitespace-pre-wrap">{row.payload.description}</p><p>Contacto: {row.payload.contact_name} · <a className="underline" href={`tel:${row.payload.phone}`}>{row.payload.phone}</a> · {row.payload.email}</p><SubmissionPhotos id={row.id} names={row.images}/>
+      {row.status==='awaiting_email'&&<div className="mt-4"><button onClick={()=>testLink(row.id)} className="underline">Abrir verificación de prueba (DEV)</button>{links[row.id]&&<a href={links[row.id]} target="_blank" rel="noreferrer" className="ml-4 font-bold underline">Confirmar correo de prueba</a>}</div>}
+      {row.status==='pending_review'&&<div className="mt-4"><label>Nota de revisión<textarea value={notes[row.id]||''} onChange={e=>setNotes(v=>({...v,[row.id]:e.target.value}))} maxLength={2000} className="mt-2 w-full rounded-lg border p-3"/></label><div className="mt-3 flex gap-3"><button disabled={!!busy} onClick={()=>review(row.id,'approve')} className="rounded-xl bg-brand-red px-4 py-3 font-bold text-white">Aprobar y publicar</button><button disabled={!!busy} onClick={()=>review(row.id,'reject')} className="rounded-xl border px-4 py-3">Rechazar</button></div></div>}
+      {row.review_note&&<p className="mt-3">Nota: {row.review_note}</p>}
+    </article>)}</div></div></MainLayout>;
+}

@@ -1,9 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
+import {referenceLabel,matchesPropertyReference} from "../../services/propertyReference";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 
 import api from "../../services/api";
+import { groupCrawlerMessages, searchCrawlerInBatches } from "../../services/crawlerSearch";
 import MainLayout from "../../layouts/MainLayout";
+import CountryRegionFields from "../../components/CountryRegionFields";
 
 const QUERY_OPTIONS = [
   {
@@ -52,6 +55,7 @@ const EXTERNAL_SOURCES = [
 ];
 
 const METRO_CITIES = [
+  { id: "Vic", label: "Vic" },
   { id: "Hospitalet de Llobregat", label: "L'Hospitalet de Llobregat" },
   { id: "El Prat de Llobregat", label: "El Prat de Llobregat" },
   { id: "Badalona", label: "Badalona" },
@@ -60,7 +64,11 @@ const METRO_CITIES = [
   { id: "Santa Coloma de Gramenet", label: "Santa Coloma de Gramenet" },
 ];
 
-const SCRAPER_URL = "https://scraper.reygom.com/search";
+const SCRAPER_URL =
+  import.meta.env.VITE_SCRAPER_URL ||
+  (import.meta.env.VITE_APP_ENV === "DEV"
+    ? "/crawler/search"
+    : "https://scraper.reygom.com/search");
 
 const OWNER_TYPE_LABELS = {
   particular: "Particular",
@@ -69,6 +77,13 @@ const OWNER_TYPE_LABELS = {
 };
 
 const DEFAULT_EXTERNAL_FILTERS = {
+  rental_kind: "entire",
+  room_occupancy: "single",
+  include_unconfirmed_occupancy: false,
+  country_code: "ES",
+  region_code: "08",
+  province: "Barcelona",
+  postal_code: "",
   city: "Barcelona",
   bedrooms_min: "2",
   bathrooms_min: "1",
@@ -81,6 +96,28 @@ const DEFAULT_EXTERNAL_FILTERS = {
   metroCities: [],
 };
 
+function CrawlerMessages({ title, messages, neutral = false }) {
+  const groups = groupCrawlerMessages(messages);
+  if (!groups.length) return null;
+  return (
+    <section className={"mt-6 rounded-2xl border p-4 text-sm " + (neutral ? "border-slate-200 bg-slate-50 text-slate-700" : "border-amber-200 bg-amber-50 text-amber-800")}>
+      <h3 className="font-bold">{title}</h3>
+      <ul className="mt-2 space-y-2">
+        {groups.map((group) => (
+          <li key={group.key}>
+            <details>
+              <summary className="cursor-pointer">
+                <span className="font-semibold">{group.sourceLabel}{group.cities.length === 1 ? " (" + group.cities[0] + ")" : " (" + group.cities.length + " municipios)"}:</span>{" "}{group.message}
+              </summary>
+              {group.cities.length > 1 && <p className="mt-1 pl-4">Municipios: {group.cities.join(", ")}</p>}
+            </details>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 function AlquileresPage() {
   const navigate = useNavigate();
 
@@ -92,10 +129,19 @@ function AlquileresPage() {
 
   const [externalFilters, setExternalFilters] = useState(DEFAULT_EXTERNAL_FILTERS);
   const [externalResults, setExternalResults] = useState([]);
+  const [unverifiedResults, setUnverifiedResults] = useState([]);
   const [externalSourceErrors, setExternalSourceErrors] = useState({});
+  const [externalSourceNotices, setExternalSourceNotices] = useState({});
   const [externalLoading, setExternalLoading] = useState(false);
   const [externalError, setExternalError] = useState("");
   const [externalQueried, setExternalQueried] = useState(false);
+  const [externalProgress, setExternalProgress] = useState({ completed: 0, total: 0 });
+  const externalAbort = useRef(null);
+
+  useEffect(() => () => {
+    externalAbort.current?.abort();
+    externalAbort.current = null;
+  }, []);
 
 
   useEffect(() => {
@@ -128,7 +174,7 @@ function AlquileresPage() {
       const matchesSearch =
         normalizedSearch === "" ||
         property.title?.toLowerCase().includes(normalizedSearch) ||
-        property.reference_id?.toLowerCase().includes(normalizedSearch) ||
+        matchesPropertyReference(property, search) ||
         property.city?.toLowerCase().includes(normalizedSearch) ||
         property.province?.toLowerCase().includes(normalizedSearch);
 
@@ -172,22 +218,39 @@ function AlquileresPage() {
   };
 
   const handleExternalSearch = async () => {
+    if (externalAbort.current) return;
+    if (externalFilters.country_code !== "ES") {setExternalError("La búsqueda en portales de Colombia todavía no está configurada.");return;}
+    if (!externalFilters.region_code || !externalFilters.city) {setExternalError("Selecciona provincia y municipio.");return;}
+    if (externalFilters.postal_code && !/^[0-9]{5}$/.test(externalFilters.postal_code)) {setExternalError("Introduce un código postal de cinco cifras.");return;}
+    const controller = new AbortController();
+    externalAbort.current = controller;
     try {
       setExternalLoading(true);
       setExternalError("");
+      setExternalSourceErrors({});
+      setExternalSourceNotices({});
+      setExternalResults([]);
+      setUnverifiedResults([]);
       setExternalQueried(true);
 
       const primaryCity = externalFilters.city.trim() || "Barcelona";
       const extraCities = (externalFilters.metroCities || []).filter(
         (cityName) => cityName.toLowerCase() !== primaryCity.toLowerCase()
       );
-      const cities = [primaryCity, ...extraCities];
+      const cities = externalFilters.postal_code ? [primaryCity] : [primaryCity, ...extraCities];
 
       const payload = {
+        rental_kind: externalFilters.rental_kind,
+        room_occupancy: externalFilters.room_occupancy,
+        include_unconfirmed_occupancy: externalFilters.include_unconfirmed_occupancy,
+        country_code: externalFilters.country_code,
+        region_code: externalFilters.region_code,
+        postal_code: externalFilters.postal_code || null,
+        verify_location: true,
         city: primaryCity,
         cities,
         bedrooms_min:
-          externalFilters.bedrooms_min === ""
+          externalFilters.rental_kind === "room" || externalFilters.bedrooms_min === ""
             ? null
             : Number(externalFilters.bedrooms_min),
         bathrooms_min:
@@ -203,35 +266,40 @@ function AlquileresPage() {
             ? null
             : Number(externalFilters.price_max),
         owner_only: externalFilters.owner_only,
-        long_term: externalFilters.long_term,
-        max_age_hours: Number(externalFilters.max_age_hours) || 72,
+        long_term: externalFilters.rental_kind === "room" ? false : externalFilters.long_term,
+        max_age_hours: externalFilters.rental_kind === "room" ? null : Number(externalFilters.max_age_hours) || 72,
         sources: externalFilters.sources,
       };
 
-      const response = await fetch(SCRAPER_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+      await searchCrawlerInBatches(payload, {
+        endpoint: SCRAPER_URL,
+        signal: controller.signal,
+        onProgress: (progress) => {
+          if (externalAbort.current !== controller) return;
+          setExternalResults(progress.listings);
+          setUnverifiedResults(progress.unverifiedListings || []);
+          setExternalSourceErrors(progress.errors);
+          setExternalSourceNotices(progress.notices);
+          setExternalProgress({ completed: progress.completed, total: progress.total });
+        },
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      setExternalResults(Array.isArray(data.listings) ? data.listings : []);
-      setExternalSourceErrors(data.errors || {});
     } catch (requestError) {
-      console.error("Error en la búsqueda externa:", requestError);
-
+      if (externalAbort.current !== controller) return;
+      if (!controller.signal.aborted) console.error("Error en la búsqueda externa:", requestError);
       setExternalError(
-        "No se ha podido completar la búsqueda externa. Inténtalo de nuevo en unos segundos."
+        controller.signal.aborted
+          ? "Búsqueda detenida. Se conservan los resultados obtenidos."
+          : requestError.message.startsWith("Selecciona")
+            ? requestError.message
+            : requestError.message === "HTTP 429"
+              ? "Otra búsqueda está en curso. Espera a que termine antes de consultar de nuevo."
+              : "No se ha podido completar la búsqueda. Se conservan los resultados obtenidos; puedes volver a intentarlo."
       );
-      setExternalResults([]);
-      setExternalSourceErrors({});
     } finally {
-      setExternalLoading(false);
+      if (externalAbort.current === controller) {
+        externalAbort.current = null;
+        setExternalLoading(false);
+      }
     }
   };
 
@@ -315,20 +383,33 @@ function AlquileresPage() {
 
         {queryType === "externa" && (
           <div className="mt-5 space-y-4">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <label className="block">
-                <span className="text-xs font-bold uppercase tracking-wide text-gray-500">
-                  Ciudad
-                </span>
-                <input
-                  type="text"
-                  value={externalFilters.city}
-                  onChange={(event) =>
-                    updateExternalFilter("city", event.target.value)
-                  }
-                  className="mt-1 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100"
-                />
+            <CountryRegionFields value={externalFilters} disabled={externalLoading} required onChange={selection=>{setExternalFilters(previous=>({...previous,...selection,postal_code:"",metroCities:[]}));setExternalResults([]);setUnverifiedResults([]);setExternalSourceErrors({});setExternalSourceNotices({});setExternalProgress({completed:0,total:0});setExternalQueried(false);setExternalError("");}} />
+            {externalFilters.country_code === "CO" && <p role="status" className="rounded-xl bg-amber-50 p-4 text-amber-900">Puedes seleccionar departamentos y municipios de Colombia. La búsqueda en portales colombianos todavía no está configurada.</p>}
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block text-gray-700">Qué buscas
+                <select className="mt-1 w-full rounded-xl border p-3" value={externalFilters.rental_kind} disabled={externalLoading} onChange={event => setExternalFilters(previous => ({...previous, rental_kind:event.target.value, bedrooms_min:event.target.value === "room" ? "" : "2", bathrooms_min:event.target.value === "room" ? "" : "1", price_min:event.target.value === "room" ? "0" : previous.price_min, sources:previous.sources}))}>
+                  <option value="entire">Vivienda completa</option><option value="room">Habitación en alquiler</option>
+                </select>
               </label>
+              {externalFilters.rental_kind === "room" && <label className="block text-gray-700">Para quién
+                <select className="mt-1 w-full rounded-xl border p-3" disabled={externalLoading} value={externalFilters.room_occupancy} onChange={event => updateExternalFilter("room_occupancy",event.target.value)}>
+                  <option value="single">Una persona</option><option value="couple">Pareja</option>
+                </select>
+              </label>}
+            </div>
+            {externalFilters.rental_kind === "room" && <div className="rounded-xl bg-slate-50 p-3 text-sm text-gray-700">
+              <p>Puedes seleccionar los mismos portales que para vivienda completa. Los portales sin búsqueda de habitaciones configurada se indicarán en los avisos. La compatibilidad se comprueba con el texto del anuncio. Una habitación doble no confirma que admita parejas. La antigüedad y duración de estancia deben confirmarse con el anunciante.</p>
+              <label className="mt-2 flex gap-2"><input type="checkbox" checked={externalFilters.include_unconfirmed_occupancy} onChange={event => updateExternalFilter("include_unconfirmed_occupancy",event.target.checked)} />Incluir ocupación sin confirmar (consultar al anunciante)</label>
+            </div>}
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <label className="block text-gray-700">Código postal (opcional)
+                <input className="mt-1 w-full rounded-xl border p-3" inputMode="numeric" maxLength={externalFilters.country_code === "CO" ? 6 : 5} value={externalFilters.postal_code} disabled={externalLoading} placeholder="Ej. 08500" onChange={event => setExternalFilters(previous => ({...previous, postal_code:event.target.value.replace(/\D/g,""), region_code:event.target.value === "08500" && previous.country_code === "ES" ? "08" : previous.region_code, city_code:"", city:event.target.value === "08500" && previous.country_code === "ES" ? "Vic" : previous.city, metroCities:[]}))} />
+                <span className="text-xs">Con código postal se consulta solo la ciudad indicada. Los anuncios sin ubicación verificable se muestran aparte.</span>
+              </label>
+
+
 
               <label className="block">
                 <span className="text-xs font-bold uppercase tracking-wide text-gray-500">
@@ -337,6 +418,7 @@ function AlquileresPage() {
                 <input
                   type="number"
                   min="0"
+                  disabled={externalFilters.rental_kind === "room"}
                   value={externalFilters.bedrooms_min}
                   onChange={(event) =>
                     updateExternalFilter("bedrooms_min", event.target.value)
@@ -368,6 +450,7 @@ function AlquileresPage() {
                   type="number"
                   min="1"
                   max="720"
+                  disabled={externalFilters.rental_kind === "room"}
                   value={externalFilters.max_age_hours}
                   onChange={(event) =>
                     updateExternalFilter("max_age_hours", event.target.value)
@@ -423,7 +506,8 @@ function AlquileresPage() {
               <label className="flex items-center gap-2 self-end pb-2">
                 <input
                   type="checkbox"
-                  checked={externalFilters.long_term}
+                  disabled={externalFilters.rental_kind === "room"}
+                  checked={externalFilters.rental_kind === "room" ? false : externalFilters.long_term}
                   onChange={(event) =>
                     updateExternalFilter("long_term", event.target.checked)
                   }
@@ -464,7 +548,7 @@ function AlquileresPage() {
 
             <div>
               <span className="text-xs font-bold uppercase tracking-wide text-gray-500">
-                Municipios del area metropolitana
+                Municipios adicionales
               </span>
               <div className="mt-2 flex flex-wrap gap-3">
                 {METRO_CITIES.map((metro) => (
@@ -479,6 +563,7 @@ function AlquileresPage() {
                   >
                     <input
                       type="checkbox"
+                      disabled={Boolean(externalFilters.postal_code) || externalFilters.country_code !== "ES" || externalFilters.region_code !== "08"}
                       checked={(externalFilters.metroCities || []).includes(metro.id)}
                       onChange={() => toggleMetroCity(metro.id)}
                       className="mr-2 h-3 w-3 align-middle"
@@ -492,11 +577,21 @@ function AlquileresPage() {
             <button
               type="button"
               onClick={handleExternalSearch}
-              disabled={externalLoading}
+              disabled={externalLoading || externalFilters.country_code !== "ES" || !externalFilters.region_code || !externalFilters.city}
               className="rounded-xl bg-red-600 px-5 py-3 font-bold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {externalLoading ? "Consultando portales..." : "Consultar"}
             </button>
+                {externalLoading && (
+                  <button type="button" onClick={() => externalAbort.current?.abort()} className="ml-3 rounded-xl border border-red-600 px-5 py-3 font-bold text-red-600">
+                    Detener búsqueda
+                  </button>
+                )}
+                {externalProgress.total > 0 && (
+                  <p role="status" className="mt-3 text-sm text-gray-600">
+                    Consultas finalizadas: {externalProgress.completed} de {externalProgress.total} · {externalResults.length} resultados
+                  </p>
+                )}
 
             {externalError && (
               <div className="rounded-2xl border border-red-200 bg-red-50 p-4 font-medium text-red-700">
@@ -543,7 +638,7 @@ function AlquileresPage() {
             </h2>
           </div>
 
-          {externalLoading ? (
+          {externalLoading && externalResults.length === 0 ? (
             <div className="rounded-3xl bg-white p-8 text-center text-gray-600">
               Consultando portales externos...
             </div>
@@ -552,9 +647,11 @@ function AlquileresPage() {
               Ajusta los filtros y pulsa «Consultar» para buscar en los
               portales seleccionados.
             </div>
-          ) : externalResults.length === 0 ? (
+          ) : externalError && externalResults.length === 0 ? null : externalResults.length === 0 ? (
             <div className="rounded-3xl bg-white p-8 text-center text-gray-600">
-              No se han encontrado anuncios con estos criterios.
+              {unverifiedResults.length > 0 ? "No hay coincidencias con ubicación confirmada. Revisa los anuncios sin confirmar." : Object.keys(externalSourceErrors).length > 0 || Object.values(externalSourceNotices).some(notice => notice.kind !== "no_matches")
+                ? "No se han obtenido anuncios de los portales que respondieron. Revisa los avisos de la consulta."
+                : "No se han encontrado anuncios con estos criterios."}
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
@@ -567,23 +664,10 @@ function AlquileresPage() {
             </div>
           )}
 
-          {Object.keys(externalSourceErrors).length > 0 && (
-            <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-              <p className="font-bold">
-                Algunos portales no han podido consultarse:
-              </p>
-              <ul className="mt-2 list-inside list-disc">
-                {Object.entries(externalSourceErrors).map(
-                  ([source, message]) => (
-                    <li key={source}>
-                      <span className="font-semibold">{source}:</span>{" "}
-                      {String(message).slice(0, 160)}
-                    </li>
-                  )
-                )}
-              </ul>
-            </div>
-          )}
+          {unverifiedResults.length > 0 && <details className="mt-6 rounded-2xl bg-amber-50 p-4 text-amber-900"><summary className="cursor-pointer font-bold">Ubicación sin confirmar ({unverifiedResults.length})</summary><p className="my-3">Estos anuncios no se incluyen en las coincidencias confirmadas. Falta comprobar el municipio o el código postal con el anunciante.</p><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{unverifiedResults.map(listing => <ExternalListingCard key={listing.url} listing={listing} />)}</div></details>}
+          <CrawlerMessages title="Portales que no se pudieron consultar" messages={externalSourceErrors} />
+          <CrawlerMessages title="Cobertura no configurada" messages={Object.fromEntries(Object.entries(externalSourceNotices).filter(entry => entry[1].kind === "unsupported_city"))} neutral />
+          <CrawlerMessages title="Consultas sin resultados" messages={Object.fromEntries(Object.entries(externalSourceNotices).filter(entry => entry[1].kind !== "unsupported_city"))} neutral />
         </section>
       )}
     </MainLayout>
@@ -653,7 +737,7 @@ function AlquilerCard({ property, onEdit }) {
         </div>
 
         <p className="mt-4 text-xs font-bold text-gray-500">
-          Ref. {property.reference_id}
+          {referenceLabel(property)}
         </p>
 
         <div className="mt-6 flex flex-wrap gap-3">
@@ -724,8 +808,10 @@ function ExternalListingCard({ listing }) {
 
         <p className="mt-2 text-sm text-gray-500">
           {listing.location || "Ubicación no indicada"}
+          {listing.postal_code && ` · CP ${listing.postal_code}`}
         </p>
 
+        <p className="mt-2 text-xs font-bold">{listing.location_status === "unknown" ? "Ubicación sin confirmar" : listing.location_status === "confirmed" ? "Ubicación comprobada con los datos publicados" : ""}</p>
         <p className="mt-3 text-xl font-extrabold">{formattedPrice}</p>
 
         <div className="mt-4 grid grid-cols-2 gap-3 rounded-2xl bg-gray-100 p-3 text-center text-sm">
@@ -739,6 +825,11 @@ function ExternalListingCard({ listing }) {
           </div>
         </div>
 
+        {listing.rental_kind === "room" && <div className="mt-3 rounded-xl bg-slate-50 p-3 text-sm">
+          <p className="font-bold">{listing.occupancy_status === "confirmed" ? (listing.room_occupancy === "couple" ? "Admite pareja según el anuncio" : "Para una persona según el anuncio") : "Ocupación sin confirmar: consultar"}</p>
+          {listing.occupancy_evidence && <p>{listing.occupancy_evidence}</p>}
+          {listing.description && <details className="mt-2"><summary>Texto disponible del anuncio</summary><p className="whitespace-pre-line">{listing.description}</p></details>}
+        </div>}
         {listing.posted_label && (
           <p className="mt-3 text-xs text-gray-500">{listing.posted_label}</p>
         )}

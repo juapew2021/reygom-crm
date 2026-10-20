@@ -1,3 +1,14 @@
+import AgendaPage from "./pages/AgendaPage";
+import RentalSearchAccess from "./components/RentalSearchAccess";
+import NotificationsPage from "./pages/Notifications/NotificationsPage";
+import PersonalizationPage from "./pages/Personalization/PersonalizationPage";
+import MailPage from "./pages/Mail/MailPage";
+import AccessPage from "./pages/Access/AccessPage";
+import HistoryPage from "./pages/History/HistoryPage";
+import OfficeAdministrationPage from "./pages/Offices/OfficeAdministrationPage";
+import PublishPropertyPage from "./pages/Publications/PublishPropertyPage";
+import VerifySubmissionPage from "./pages/Publications/VerifySubmissionPage";
+import SubmissionsReviewPage from "./pages/Publications/SubmissionsReviewPage";
 import {
   BrowserRouter as Router,
   Route,
@@ -16,11 +27,19 @@ function App() {
   return (
     <Router>
       <Routes>
+<Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
+<Route path="/personalization" element={<ProtectedRoute><PersonalizationPage /></ProtectedRoute>} />
+<Route path="/profile" element={<ProtectedRoute><PersonalizationPage profile /></ProtectedRoute>} />
+<Route path="/mail" element={<ProtectedRoute><MailPage /></ProtectedRoute>} />
+<Route path="/access" element={<ProtectedRoute><AccessPage /></ProtectedRoute>} />
+<Route path="/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
+<Route path="/administration" element={<ProtectedRoute><OfficeAdministrationPage /></ProtectedRoute>} />
         <Route
           path="/"
           element={<Login />}
         />
 
+        <Route path="/agenda" element={<ProtectedRoute><AgendaPage /></ProtectedRoute>} />
         <Route
           path="/dashboard"
           element={
@@ -70,11 +89,14 @@ function App() {
           path="/alquileres"
           element={
             <ProtectedRoute>
-              <AlquileresPage />
+              <RentalSearchAccess><AlquileresPage /></RentalSearchAccess>
             </ProtectedRoute>
           }
         />
-      </Routes>
+      <Route path="/publicar" element={<PublishPropertyPage />} />
+<Route path="/publicar/verificar" element={<VerifySubmissionPage />} />
+<Route path="/submissions" element={<ProtectedRoute><SubmissionsReviewPage /></ProtectedRoute>} />
+</Routes>
     </Router>
   );
 }

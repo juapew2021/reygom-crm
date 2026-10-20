@@ -1,3 +1,5 @@
+import PropertyPanoramas from "../../components/properties/PropertyPanoramas";
+import PropertyAnalytics from "../../components/properties/PropertyAnalytics";
 import { useEffect, useState } from "react";
 import {
   ArrowLeft,
@@ -17,6 +19,7 @@ import PropertyMediaUploader from "../../components/properties/PropertyMediaUplo
 
 const emptyForm = {
   reference_id: "",
+  public_reference: "",
   title: "",
   description: "",
   price: "",
@@ -24,6 +27,11 @@ const emptyForm = {
   property_type: "Piso",
   status: "Disponible",
   cover_image: "",
+  country_code: "ES",
+  country: "España",
+  state_code: "",
+  state: "",
+  postal_code: "",
   city: "",
   province: "",
   bedrooms: "",
@@ -68,6 +76,7 @@ function PropertyEditor() {
       setForm({
         reference_id:
           property.reference_id || "",
+        public_reference: property.public_reference || "",
         title: property.title || "",
         description:
           property.description || "",
@@ -80,6 +89,11 @@ function PropertyEditor() {
           property.status || "Disponible",
         cover_image:
           property.cover_image || "",
+        country_code: property.country_code || "ES",
+        country: property.country || "",
+        state_code: property.state_code || "",
+        state: property.state || "",
+        postal_code: property.postal_code || "",
         city: property.city || "",
         province: property.province || "",
         bedrooms:
@@ -117,6 +131,7 @@ function PropertyEditor() {
       setForm({
         reference_id:
           property.reference_id || "",
+        public_reference: property.public_reference || "",
         title: property.title || "",
         description:
           property.description || "",
@@ -129,6 +144,11 @@ function PropertyEditor() {
           property.status || "Disponible",
         cover_image:
           property.cover_image || "",
+        country_code: property.country_code || "ES",
+        country: property.country || "",
+        state_code: property.state_code || "",
+        state: property.state || "",
+        postal_code: property.postal_code || "",
         city: property.city || "",
         province: property.province || "",
         bedrooms:
@@ -162,6 +182,7 @@ function PropertyEditor() {
       reference_id,
       ...formWithoutReference
     } = form;
+    delete formWithoutReference.public_reference;
 
     const payload = {
       ...formWithoutReference,
@@ -372,6 +393,8 @@ function PropertyEditor() {
           </div>
         </section>
       )}
+      {!loading && <PropertyPanoramas key={"panorama-" + (propertyId || "new")} propertyId={propertyId} />}
+      {!loading && <PropertyAnalytics key={propertyId} propertyId={propertyId} />}
     </MainLayout>
   );
 }

@@ -10,7 +10,7 @@ function StatsCard({ title, value, icon: Icon }) {
         </div>
 
         {Icon && (
-          <div className="bg-red-100 text-red-700 p-4 rounded-xl">
+          <div data-brand-icon className="bg-red-100 text-red-700 p-4 rounded-xl">
             <Icon size={32} />
           </div>
         )}

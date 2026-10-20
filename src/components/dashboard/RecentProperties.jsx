@@ -1,3 +1,4 @@
+import {referenceLabel} from "../../services/propertyReference";
 import Card from "../common/Card";
 import Badge from "../common/Badge";
 
@@ -20,7 +21,7 @@ function RecentProperties({ properties = [] }) {
             >
               <div>
                 <p className="font-semibold text-gray-900">
-                  {property.reference_id}
+                  {referenceLabel(property)}
                 </p>
 
                 <p className="text-sm text-gray-500">

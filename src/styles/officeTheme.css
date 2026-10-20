@@ -1,0 +1,11 @@
+.office-theme .office-sidebar {background-color:var(--office-sidebar);color:var(--office-sidebar-ink)}
+.office-theme .office-sidebar .office-nav-link {color:var(--office-sidebar-ink)}
+.office-theme .office-sidebar .office-nav-link:hover {text-decoration:underline;text-underline-offset:4px}
+.office-theme .office-sidebar .office-nav-active {color:var(--office-nav-active);font-weight:700;outline:1px solid currentColor}
+.office-theme .bg-brand-red {background-color:var(--office-primary);color:var(--office-primary-ink)}
+.office-theme .bg-brand-red:hover {background-color:var(--office-primary);filter:brightness(.94)}
+.office-theme .text-brand-red {color:var(--office-content-accent)}
+.office-theme .office-sidebar .text-brand-red {color:var(--office-nav-active)}
+.office-theme .border-brand-red {border-color:var(--office-primary)}
+.office-theme [data-brand-icon] {color:var(--office-content-accent);background-color:color-mix(in srgb,var(--office-primary) 12%,white)}
+.office-theme .office-sidebar .text-slate-400,.office-theme .office-sidebar .text-gray-500 {color:inherit;opacity:.75}

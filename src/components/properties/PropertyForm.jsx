@@ -1,3 +1,5 @@
+import {referenceLabel} from "../../services/propertyReference";
+import CountryRegionFields from "../CountryRegionFields";
 function PropertyForm({
   form,
   editingId,
@@ -22,17 +24,18 @@ function PropertyForm({
                 </span>
 
                 <span className="mt-1 block font-bold text-gray-800">
-                  {form.reference_id}
+                  {referenceLabel(form)}
                 </span>
 
                 <p className="mt-1 text-xs text-gray-500">
                   La referencia es permanente.
                 </p>
+                {form.public_reference&&form.reference_id!==form.public_reference&&<p className="mt-1 break-all text-xs text-gray-500">Referencia anterior: {form.reference_id}</p>}
               </div>
             ) : (
               <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3">
                 <span className="block text-xs font-bold uppercase tracking-wide text-red-600">
-                  RPC automático
+                  Referencia automática
                 </span>
 
                 <p className="mt-1 font-semibold text-gray-800">
@@ -40,7 +43,7 @@ function PropertyForm({
                 </p>
 
                 <p className="mt-1 text-xs text-gray-500">
-                  Ejemplo: RGESVALALB000001
+                  Ejemplo: REF: RG000001
                 </p>
               </div>
             )}
@@ -112,25 +115,8 @@ function PropertyForm({
             Ubicación
           </legend>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <input
-              name="city"
-              className="w-full rounded-2xl border border-gray-300 px-4 py-3 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100"
-              placeholder="Ciudad o municipio"
-              value={form.city}
-              required
-              onChange={onChange}
-            />
-
-            <input
-              name="province"
-              className="w-full rounded-2xl border border-gray-300 px-4 py-3 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100"
-              placeholder="Provincia"
-              value={form.province}
-              required
-              onChange={onChange}
-            />
-          </div>
+          <CountryRegionFields required disabled={saving} value={{...form,country_code:form.country_code || "ES",region_code:form.region_code || form.state_code || ""}} onChange={selection=>{for(const [name,value] of Object.entries({...selection,state:selection.province,state_code:selection.region_code,postal_code:""}))onChange({target:{name,value}});}} />
+          <label className="mt-4 block text-sm text-slate-700">Código postal (opcional)<input name="postal_code" className="mt-1 w-full rounded-xl border px-3 py-3" inputMode="numeric" maxLength={form.country_code === "CO" ? 6 : 5} pattern={form.country_code === "CO" ? "[0-9]{6}" : "[0-9]{5}"} value={form.postal_code || ""} onChange={onChange}/></label>
         </fieldset>
 
         <fieldset>

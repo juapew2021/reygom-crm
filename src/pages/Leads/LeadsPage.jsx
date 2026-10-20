@@ -1,3 +1,4 @@
+import {referenceLabel} from "../../services/propertyReference";
 import { useEffect, useState } from "react";
 import api from "../../services/api";
 import MainLayout from "../../layouts/MainLayout";
@@ -165,7 +166,7 @@ function LeadsPage() {
               <option value="">Sin inmueble asociado</option>
               {properties.map((property) => (
                 <option key={property.id} value={property.id}>
-                  {property.reference_id} - {property.title}
+                  {referenceLabel(property)} - {property.title}
                 </option>
               ))}
             </Select>
