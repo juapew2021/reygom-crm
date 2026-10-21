@@ -5,3 +5,44 @@
 @media(prefers-reduced-motion:reduce){.overview-spinning{animation:none}.overview-metric[href]:hover{transform:none}}
 
 .overview-metrics-agent{grid-template-columns:repeat(2,minmax(0,1fr))}
+
+/* Keep the key figures and today's work visible before supporting detail. */
+.overview-heading{margin-bottom:25px}
+.overview-heading h1{font-size:32px;font-weight:750}
+.overview-heading>div>p:last-child{font-size:14px}
+.overview-schedule{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;border:1px solid #ffffff30;padding:10px 14px;border-radius:9px;font-size:12px;font-weight:600}
+.overview-schedule:hover{background:#ffffff08}
+.overview-metrics{gap:18px;margin-bottom:22px}
+.overview-metric{position:relative;min-height:150px;padding:22px;border-radius:14px;border-color:#ffffff;background:#fff;box-shadow:0 2px 3px #0000000a}
+.overview-metric-top{padding-right:58px;font-size:13px;min-height:18px}
+.overview-metric-top>svg{position:absolute;right:21px;top:27px;width:52px;height:52px;padding:14px;border-radius:14px;background:color-mix(in srgb,var(--office-primary) 11%,white);color:var(--office-content-accent)}
+.overview-metric>strong{font-size:35px;margin:12px 0 11px}
+.overview-metric-bottom small{font-size:11px}
+.overview-metric-bottom>svg{color:#9ca3af}
+.overview-focus-grid{grid-template-columns:minmax(0,1.65fr) minmax(270px,1fr);gap:22px;align-items:stretch}
+.overview-focus-grid .agenda-widget{margin:0;padding:23px;border-radius:14px}
+.overview-focus-grid .agenda-heading{gap:12px;margin-bottom:18px}
+.overview-focus-grid .agenda-heading h2{font-size:19px}
+.overview-focus-grid .agenda-heading p:not(.agenda-eyebrow){font-size:11px;max-width:310px}
+.overview-focus-grid .agenda-eyebrow{font-size:9px}
+.overview-focus-grid .agenda-actions{gap:10px;justify-content:flex-end}
+.overview-focus-grid .agenda-actions>a{font-size:11px}
+.overview-focus-grid .agenda-primary{min-height:36px;padding:8px 11px}
+.overview-focus-grid .agenda-week button{min-height:73px;padding:9px 4px;gap:3px}
+.overview-focus-grid .agenda-empty{padding:16px 8px}
+.overview-shortcuts{padding:23px}
+.overview-shortcuts>h2{font-size:18px}.overview-shortcuts>p{font-size:12px;margin-bottom:18px}
+.overview-shortcuts>a{min-height:65px;padding:14px 0}
+.overview-shortcuts strong{font-size:13px}.overview-shortcuts small{font-size:11px}
+.overview-shortcut-icon{background:color-mix(in srgb,var(--office-primary) 7%,white);color:var(--office-content-accent);width:36px;height:36px}
+.overview-next{padding:21px 25px;margin-bottom:23px;border-radius:12px;background:#fff;gap:18px}
+.overview-next-content{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:25px;align-items:center}
+.overview-next .overview-eyebrow{grid-column:1;margin:0 0 7px}
+.overview-next h2{grid-column:1;max-width:none;font-size:20px;margin:0 0 5px}
+.overview-next-content>p:not(.overview-eyebrow){grid-column:1;max-width:none;font-size:12px;margin:0;line-height:1.6}
+.overview-next-content>.overview-primary{grid-column:2;grid-row:1/4;white-space:nowrap}
+.overview-next-art{display:none}
+.overview-panel-heading h2{font-size:17px}.overview-panel-heading p{font-size:12px}
+.overview-empty h3{font-size:14px}.overview-empty p{font-size:12px}.overview-empty>a{font-size:12px}
+@media(max-width:1200px){.overview-heading h1{font-size:28px}.overview-heading-actions{flex-wrap:wrap;justify-content:flex-end}.overview-metric{padding:18px}.overview-metric-top>svg{right:15px;width:44px;height:44px;padding:11px}.overview-metric-top{padding-right:43px}.overview-focus-grid{grid-template-columns:minmax(0,1fr)}.overview-shortcuts>a{min-height:57px}.overview-focus-grid .agenda-heading p:not(.agenda-eyebrow){max-width:none}}
+@media(max-width:650px){.overview-heading-actions{flex-wrap:wrap;justify-content:flex-start;gap:8px}.overview-heading-actions>.overview-primary{flex:1}.overview-schedule{flex:1}.overview-heading-actions>.overview-refresh{padding:10px;flex:0}.overview-heading-actions .overview-refresh span{display:none}.overview-metrics{gap:11px}.overview-metric{min-height:145px;padding:17px 14px}.overview-metric-top{padding-right:0;font-size:12px}.overview-metric-top>svg{width:31px;height:31px;padding:7px;right:13px;top:49px;border-radius:9px}.overview-metric>strong{font-size:31px}.overview-metric-bottom small{font-size:10px}.overview-focus-grid .agenda-widget{padding:18px 14px}.overview-focus-grid .agenda-heading{flex-wrap:wrap}.overview-focus-grid .agenda-actions{justify-content:flex-start}.overview-focus-grid .agenda-week{gap:4px}.overview-focus-grid .agenda-week button{padding:8px 2px;min-height:68px}.overview-next{padding:20px}.overview-next-content{display:block}.overview-next-content>.overview-primary{margin-top:15px}.overview-next h2{font-size:20px}.overview-shortcuts{padding:20px}}
